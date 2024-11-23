@@ -1,0 +1,76 @@
+[tool.poetry]
+name = "fastcgan"
+version = "0.1.0"
+description = "cGAN forecasting system back-end API developed using FastAPI"
+authors = ["Jason Kinyua <jaysnmury@gmail.com>"]
+license = "CC BY 4.0"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.10,<4.0"
+fastapi = "^0.115.5"
+pydantic = "^2.10.1"
+pydantic-settings = "^2.6.1"
+SQLAlchemy = "^2.0.36"
+alembic = "^1.14.0"
+python-dotenv = "^1.0.1"
+asyncpg = "^0.30.0"
+psycopg2-binary = "^2.9.10"
+redis = { extras = ["arq", "hiredis"], version = "^5.2.0" }
+uvicorn = "^0.32.1"
+uuid = "^1.30"
+slowapi = "^0.1.9"
+bcrypt = "^4.2.1"
+python-jose = { extras = ["cryptography"], version = "^3.3.0" }
+arq = "^0.26.1"
+greenlet = "^3.1.1"
+
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.8.0"
+pre-commit = "^4.0.1"
+mypy = "^1.13.0"
+black = "^24.10.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+target-version = "py313"
+line-length = 120
+fix = true
+lint.select = [
+    # https://docs.astral.sh/ruff/rules/#pyflakes-f
+    "F", # Pyflakes
+    # https://docs.astral.sh/ruff/rules/#pycodestyle-e-w
+    "E", # pycodestyle
+    "W", # Warning
+    # https://docs.astral.sh/ruff/rules/#flake8-comprehensions-c4
+    # https://docs.astral.sh/ruff/rules/#mccabe-c90
+    "C", # Complexity (mccabe+) & comprehensions
+    # https://docs.astral.sh/ruff/rules/#pyupgrade-up
+    "UP", # pyupgrade
+    # https://docs.astral.sh/ruff/rules/#isort-i
+    "I", # isort
+]
+lint.ignore = [
+    # https://docs.astral.sh/ruff/rules/#pycodestyle-e-w
+    "E402", # module level import not at top of file
+    # https://docs.astral.sh/ruff/rules/#pyupgrade-up
+    "UP006", # use-pep585-annotation
+    "UP007", # use-pep604-annotation
+    "E741",  # Ambiguous variable name
+    # "UP035", # deprecated-assertion
+]
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = [
+    "F401", # unused import
+    "F403", # star imports
+]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 24
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
