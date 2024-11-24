@@ -38,10 +38,10 @@ async def open_ifs_forecast(
     mask_area: str | None = COUNTRY_NAMES[0],
     color_style: str | None = COLOR_SCHEMES[0],
 ) -> list[list[Path], xr.Dataset | None]:
-    source, data = ("open-ifs", None)
+    source = "open-ifs"
     if data_date is None:
         data_dates = get_forecast_data_dates(
-            mask_region=COUNTRY_NAMES[0],
+            mask_region=mask_area,
             source=source,
         )
         data_date = data_dates[0]
@@ -73,11 +73,10 @@ async def open_ifs_forecast(
             file_name=str(maps_path[-1]),
             show_plot=False,
         )
-    return maps_path, data
+    return maps_path
 
 
 async def open_ifs_forecast_ensemble(
-    data: xr.Dataset | None = None,
     vis_param: IfsDataParameter | None = IfsDataParameter.tp,
     plot_units: PrecipitationUnit | None = PrecipitationUnit.hour6,
     data_date: str | None = None,
@@ -102,16 +101,15 @@ async def open_ifs_forecast_ensemble(
         ensemble=True,
     )
     if not maps_path[0].exists():
-        if data is None:
-            data_store = get_data_store_path(source=source)
-            data = load_open_ifs_data(
-                key=vis_param.name,
-                forecast_init_date=data_date_obj,
-                data_dir=str(data_store),
-                mask_region=mask_area,
-                status_updates=False,
-                cgan_ui_fs=True,
-            )
+        data_store = get_data_store_path(source=source)
+        data = load_open_ifs_data(
+            key=vis_param.name,
+            forecast_init_date=data_date_obj,
+            data_dir=str(data_store),
+            mask_region=mask_area,
+            status_updates=False,
+            cgan_ui_fs=True,
+        )
         plot_ifs_forecast_ensemble(
             data=data,
             style=color_style,
@@ -132,7 +130,7 @@ async def cgan_forecast(
     mask_area: str | None = COUNTRY_NAMES[0],
     color_style: str | None = COLOR_SCHEMES[0],
 ) -> list[list[Path], xr.Dataset | None]:
-    source, data = ("cgan", None)
+    source = "cgan"
     if data_date is None:
         data_dates = get_forecast_data_dates(
             mask_region=COUNTRY_NAMES[0],
@@ -169,11 +167,10 @@ async def cgan_forecast(
             show_plot=False,
             file_name=str(maps_path[-1]),
         )
-    return maps_path if len(maps_path) == 1 else maps_path[:-1], data
+    return maps_path if len(maps_path) == 1 else maps_path[:-1]
 
 
 async def cgan_forecast_ensemble(
-    data: xr.Dataset | None = None,
     vis_param: IfsDataParameter | None = IfsDataParameter.tp,
     plot_units: PrecipitationUnit | None = PrecipitationUnit.hour6,
     start_time: ValidStartTime | None = ValidStartTime.six,
@@ -183,9 +180,7 @@ async def cgan_forecast_ensemble(
     max_ensemble_plots: int | None = 50,
 ) -> list[Path]:
     source = "cgan"
-    start_time = (
-        start_time if start_time != ValidStartTime.combine else ValidStartTime.six
-    )
+    start_time = start_time if start_time != ValidStartTime.combine else ValidStartTime.six
     if data_date is None:
         data_dates = get_forecast_data_dates(
             mask_region=COUNTRY_NAMES[0],
@@ -205,14 +200,13 @@ async def cgan_forecast_ensemble(
         max_ensemble_plots=max_ensemble_plots,
     )
     if not maps_path[0].exists():
-        if data is None:
-            data_store = get_data_store_path(source=source)
-            data = load_GAN_forecast(
-                forecast_init_date=data_date_obj,
-                data_dir=str(data_store),
-                mask_region=mask_area,
-                cgan_ui_fs=True,
-            )
+        data_store = get_data_store_path(source=source)
+        data = load_GAN_forecast(
+            forecast_init_date=data_date_obj,
+            data_dir=str(data_store),
+            mask_region=mask_area,
+            cgan_ui_fs=True,
+        )
         plot_GAN_ensemble(
             data=data,
             valid_time_start_hour=start_time.value,
@@ -227,7 +221,6 @@ async def cgan_forecast_ensemble(
 
 
 async def cgan_threshold_chance(
-    data: xr.Dataset | None = None,
     threshold: float | None = 5,
     vis_param: IfsDataParameter | None = IfsDataParameter.tp,
     plot_units: PrecipitationUnit | None = PrecipitationUnit.hour6,
@@ -256,14 +249,13 @@ async def cgan_threshold_chance(
         show_percentages=show_percentages,
     )
     if not maps_path[0].exists():
-        if data is None:
-            data_store = get_data_store_path(source=source)
-            data = load_GAN_forecast(
-                forecast_init_date=data_date_obj,
-                data_dir=str(data_store),
-                mask_region=mask_area,
-                cgan_ui_fs=True,
-            )
+        data_store = get_data_store_path(source=source)
+        data = load_GAN_forecast(
+            forecast_init_date=data_date_obj,
+            data_dir=str(data_store),
+            mask_region=mask_area,
+            cgan_ui_fs=True,
+        )
         plot_GAN_threshold_chance(
             data=data,
             style=color_style,
@@ -279,7 +271,6 @@ async def cgan_threshold_chance(
 
 
 async def cgan_local_histogram(
-    data: xr.Dataset | None = None,
     data_date: str | None = None,
     location: str | None = "LatLng",
     country: str | None = None,
@@ -326,14 +317,13 @@ async def cgan_local_histogram(
         )
 
         if not hist_path.exists():
-            if data is None:
-                data_store = get_data_store_path(source=source)
-                data = load_GAN_forecast(
-                    forecast_init_date=data_date_obj,
-                    data_dir=str(data_store),
-                    mask_region=mask_area,
-                    cgan_ui_fs=True,
-                )
+            data_store = get_data_store_path(source=source)
+            data = load_GAN_forecast(
+                forecast_init_date=data_date_obj,
+                data_dir=str(data_store),
+                mask_region=mask_area,
+                cgan_ui_fs=True,
+            )
             plot_GAN_local_histograms(
                 data=data,
                 location_name=location,
