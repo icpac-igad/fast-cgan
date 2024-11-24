@@ -1,11 +1,14 @@
 import os
 from enum import Enum
+from pathlib import Path
+from typing import Literal
 
 from pydantic_settings import BaseSettings
 from starlette.config import Config
 
 current_file_dir = os.path.dirname(os.path.realpath(__file__))
-env_path = os.path.join(current_file_dir, "..", "..", ".env")
+base_dir = os.path.abspath(f"{current_file_dir}/../../")
+env_path = os.path.join(base_dir, ".env")
 config = Config(env_path)
 
 
@@ -13,9 +16,38 @@ class AppSettings(BaseSettings):
     APP_NAME: str = config("APP_NAME", default="FastAPI app")
     APP_DESCRIPTION: str | None = config("APP_DESCRIPTION", default=None)
     APP_VERSION: str | None = config("APP_VERSION", default=None)
+    APP_BASE_URL: str | None = config("BASE_URL", default="http://127.0.0.1:8000")
     LICENSE_NAME: str | None = config("LICENSE", default=None)
     CONTACT_NAME: str | None = config("CONTACT_NAME", default=None)
     CONTACT_EMAIL: str | None = config("CONTACT_EMAIL", default=None)
+    MASK_REGION: str | None = config("MASK_REGION", default=None)
+
+
+class AssetPathSettings(BaseSettings):
+    STATIC_ASSETS_DIR: str | None = config(
+        "STATIC_DIR", default=os.path.join(base_dir, "static")
+    )
+    CACHE_FILES_DIR: str | None = config(
+        "CACHE_DIR", default=os.path.join(base_dir, "cache")
+    )
+    FORECAST_DATA_DIR: str | None = config(
+        "FORECAST_DIR", default=os.path.join(base_dir, "data/forecasts")
+    )
+    IFS_DATA_DIR: str | None = config(
+        "IFS_DIR", default=os.path.join(FORECAST_DATA_DIR, "ecmwf")
+    )
+    GAN_DATA_DIR: str | None = config(
+        "GAN_DIR", default=os.path.join(FORECAST_DATA_DIR, "cgan")
+    )
+    ASSETS_DIR_MAP: dict[str, str] = {
+        "static": STATIC_ASSETS_DIR,
+        "cache": CACHE_FILES_DIR,
+        "forecasts": FORECAST_DATA_DIR,
+        "cgan": GAN_DATA_DIR,
+        "open_ifs": IFS_DATA_DIR,
+    }
+    STATIC_BASE_URL: str | None = config("STATIC_URL", default="/static")
+    CACHE_BASE_URL: str | None = config("CACHE_URL", default="/media")
 
 
 class CryptSettings(BaseSettings):
@@ -32,8 +64,12 @@ class PostgresSettings(BaseSettings):
     POSTGRES_PORT: int = config("POSTGRES_PORT", default=5432)
     POSTGRES_DB: str = config("POSTGRES_DB", default="postgres")
     POSTGRES_SYNC_PREFIX: str = config("POSTGRES_SYNC_PREFIX", default="postgresql://")
-    POSTGRES_ASYNC_PREFIX: str = config("POSTGRES_ASYNC_PREFIX", default="postgresql+asyncpg://")
-    POSTGRES_URI: str = f"{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_SERVER}:{POSTGRES_PORT}/{POSTGRES_DB}"
+    POSTGRES_ASYNC_PREFIX: str = config(
+        "POSTGRES_ASYNC_PREFIX", default="postgresql+asyncpg://"
+    )
+    POSTGRES_URI: str = (
+        f"{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_SERVER}:{POSTGRES_PORT}/{POSTGRES_DB}"
+    )
     POSTGRES_URL: str | None = config("POSTGRES_URL", default=None)
 
 
@@ -66,7 +102,9 @@ class RedisRateLimiterSettings(BaseSettings):
     REDIS_RATE_LIMIT_HOST: str = config("REDIS_RATE_LIMIT_HOST", default="localhost")
     REDIS_RATE_LIMIT_PORT: int = config("REDIS_RATE_LIMIT_PORT", default=6379)
     REDIS_RATE_LIMIT_DATABASE: int = config("REDIS_RATE_LIMIT_DATABASE", default=10)
-    REDIS_RATE_LIMIT_URL: str = f"redis://{REDIS_RATE_LIMIT_HOST}:{REDIS_RATE_LIMIT_PORT}/{REDIS_RATE_LIMIT_DATABASE}"
+    REDIS_RATE_LIMIT_URL: str = (
+        f"redis://{REDIS_RATE_LIMIT_HOST}:{REDIS_RATE_LIMIT_PORT}/{REDIS_RATE_LIMIT_DATABASE}"
+    )
 
 
 class DefaultRateLimitSettings(BaseSettings):
@@ -86,6 +124,7 @@ class EnvironmentSettings(BaseSettings):
 
 class Settings(
     AppSettings,
+    AssetPathSettings,
     PostgresSettings,
     CryptSettings,
     FirstUserSettings,
@@ -101,3 +140,26 @@ class Settings(
 
 
 settings = Settings()
+
+
+def get_asset_dir_path(asset: Literal["static", "cache"]) -> Path:
+    asset_path = Path(settings.ASSETS_DIR_MAP[asset])
+    if not asset_path.exists():
+        asset_path.mkdir(parents=True)
+    return asset_path
+
+
+def get_cached_file_base_path(
+    file_type: Literal["media", "data"] | None = "media"
+) -> Path:
+    cache_path = get_asset_dir_path("cache") / file_type
+    if not cache_path.exists():
+        cache_path.mkdir(parents=True)
+    return cache_path
+
+
+def get_cached_file_url(file_path: str | Path) -> str:
+    media_path = str(file_path).replace(
+        f"{settings.ASSETS_DIR_MAP['cache']}/media/", ""
+    )
+    return f"{settings.APP_BASE_URL}{settings.CACHE_BASE_URL}/{media_path}"

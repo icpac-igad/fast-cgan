@@ -10,6 +10,7 @@ from arq.connections import RedisSettings
 from fastapi import APIRouter, FastAPI
 from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
+from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -19,9 +20,9 @@ from fastcgan.db.database import async_db_engine as engine
 from fastcgan.db.schema import *  # noqa: F403
 from fastcgan.middleware.client_cache_middleware import ClientCacheMiddleware
 from fastcgan.routes import limiter
-from fastcgan.routes.healthz import router as helthz_rouer
 from fastcgan.tools.config import (
     AppSettings,
+    AssetPathSettings,
     ClientSideCacheSettings,
     EnvironmentOption,
     EnvironmentSettings,
@@ -29,6 +30,8 @@ from fastcgan.tools.config import (
     RedisCacheSettings,
     RedisQueueSettings,
     RedisRateLimiterSettings,
+    get_asset_dir_path,
+    get_cached_file_base_path,
     settings,
 )
 from fastcgan.utils import cache, queue, rate_limit
@@ -52,7 +55,9 @@ async def close_redis_cache_pool() -> None:
 
 # -------------- queue --------------
 async def create_redis_queue_pool() -> None:
-    queue.pool = await create_pool(RedisSettings(host=settings.REDIS_QUEUE_HOST, port=settings.REDIS_QUEUE_PORT))
+    queue.pool = await create_pool(
+        RedisSettings(host=settings.REDIS_QUEUE_HOST, port=settings.REDIS_QUEUE_PORT)
+    )
 
 
 async def close_redis_queue_pool() -> None:
@@ -195,30 +200,48 @@ def create_application(
     application.add_middleware(SlowAPIMiddleware)
 
     if isinstance(settings, ClientSideCacheSettings):
-        application.add_middleware(ClientCacheMiddleware, max_age=settings.CLIENT_CACHE_MAX_AGE)
+        application.add_middleware(
+            ClientCacheMiddleware, max_age=settings.CLIENT_CACHE_MAX_AGE
+        )
 
     if isinstance(settings, EnvironmentSettings):
+        docs_router = APIRouter()
+
+        @docs_router.get("/redoc", include_in_schema=False)
+        async def get_redoc_documentation() -> fastapi.responses.HTMLResponse:
+            return get_redoc_html(openapi_url="/openapi.json", title="docs")
+
+        @docs_router.get("/openapi.json", include_in_schema=False)
+        async def openapi() -> dict[str, Any]:
+            out: dict = get_openapi(
+                title=application.title,
+                version=application.version,
+                routes=application.routes,
+            )
+            return out
+
+        # allow swagger documentation in dev and local mode, disable in production
         if settings.ENVIRONMENT != EnvironmentOption.PRODUCTION:
-            docs_router = APIRouter()
 
             @docs_router.get("/docs", include_in_schema=False)
             async def get_swagger_documentation() -> fastapi.responses.HTMLResponse:
                 return get_swagger_ui_html(openapi_url="/openapi.json", title="docs")
 
-            @docs_router.get("/redoc", include_in_schema=False)
-            async def get_redoc_documentation() -> fastapi.responses.HTMLResponse:
-                return get_redoc_html(openapi_url="/openapi.json", title="docs")
-
-            @docs_router.get("/openapi.json", include_in_schema=False)
-            async def openapi() -> dict[str, Any]:
-                out: dict = get_openapi(
-                    title=application.title,
-                    version=application.version,
-                    routes=application.routes,
-                )
-                return out
-
             application.include_router(docs_router)
-            application.include_router(helthz_rouer)
 
-        return application
+    if isinstance(settings, AssetPathSettings):
+        if settings.ENVIRONMENT != EnvironmentOption.PRODUCTION:
+            # mount static files
+            application.mount(
+                settings.STATIC_BASE_URL,
+                StaticFiles(directory=get_asset_dir_path("static")),
+                name="static",
+            )
+            # mount media files
+            application.mount(
+                settings.CACHE_BASE_URL,
+                StaticFiles(directory=get_cached_file_base_path("media")),
+                name="media",
+            )
+
+    return application

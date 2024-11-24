@@ -24,6 +24,15 @@ bcrypt = "^4.2.1"
 python-jose = { extras = ["cryptography"], version = "^3.3.0" }
 arq = "^0.26.1"
 greenlet = "^3.1.1"
+loguru = "^0.7.2"
+schedule = "^1.2.2"
+cfgrib = "^0.9.14.1"
+xarray = "^2024.11.0"
+matplotlib = "^3.9.2"
+show_forecasts = { git = "https://github.com/Fenwick-Cooper/show-forecasts.git", rev = "for-mercury" }
+ecmwf-opendata = "^0.3.10"
+sysrsync = "^1.1.1"
+eccodes = "2.38.3"
 
 
 [tool.poetry.group.dev.dependencies]
