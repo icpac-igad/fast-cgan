@@ -3,8 +3,8 @@ from datetime import UTC, datetime
 from redis.asyncio import ConnectionPool, Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from fastcgan.logger import logging
 from fastcgan.models.rate_limit import sanitize_path
+from fastcgan.tools.logger import logging
 
 logger = logging.getLogger(__name__)
 

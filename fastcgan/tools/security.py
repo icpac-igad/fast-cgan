@@ -6,8 +6,8 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt  # noqa: F401
 from sqlalchemy.ext.asyncio import AsyncSession  # noqa: F401
 
-from fastcgan.config import settings
 from fastcgan.models.shared import TokenBlacklistCreate, TokenData  # noqa: F401
+from fastcgan.tools.config import settings
 
 SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = settings.ALGORITHM

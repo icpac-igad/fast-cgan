@@ -14,7 +14,13 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
-from fastcgan.config import (
+from fastcgan.db.database import Base
+from fastcgan.db.database import async_db_engine as engine
+from fastcgan.db.schema import *  # noqa: F403
+from fastcgan.middleware.client_cache_middleware import ClientCacheMiddleware
+from fastcgan.routes import limiter
+from fastcgan.routes.healthz import router as helthz_rouer
+from fastcgan.tools.config import (
     AppSettings,
     ClientSideCacheSettings,
     EnvironmentOption,
@@ -25,12 +31,6 @@ from fastcgan.config import (
     RedisRateLimiterSettings,
     settings,
 )
-from fastcgan.db.database import Base
-from fastcgan.db.database import async_db_engine as engine
-from fastcgan.db.schema import *  # noqa: F403
-from fastcgan.middleware.client_cache_middleware import ClientCacheMiddleware
-from fastcgan.routes import limiter
-from fastcgan.routes.healthz import router as helthz_rouer
 from fastcgan.utils import cache, queue, rate_limit
 
 
@@ -52,9 +52,7 @@ async def close_redis_cache_pool() -> None:
 
 # -------------- queue --------------
 async def create_redis_queue_pool() -> None:
-    queue.pool = await create_pool(
-        RedisSettings(host=settings.REDIS_QUEUE_HOST, port=settings.REDIS_QUEUE_PORT)
-    )
+    queue.pool = await create_pool(RedisSettings(host=settings.REDIS_QUEUE_HOST, port=settings.REDIS_QUEUE_PORT))
 
 
 async def close_redis_queue_pool() -> None:
@@ -197,9 +195,7 @@ def create_application(
     application.add_middleware(SlowAPIMiddleware)
 
     if isinstance(settings, ClientSideCacheSettings):
-        application.add_middleware(
-            ClientCacheMiddleware, max_age=settings.CLIENT_CACHE_MAX_AGE
-        )
+        application.add_middleware(ClientCacheMiddleware, max_age=settings.CLIENT_CACHE_MAX_AGE)
 
     if isinstance(settings, EnvironmentSettings):
         if settings.ENVIRONMENT != EnvironmentOption.PRODUCTION:

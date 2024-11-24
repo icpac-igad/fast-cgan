@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import DeclarativeBase, MappedAsDataclass, sessionmaker
 
-from fastcgan.config import EnvironmentOption, settings
+from fastcgan.tools.config import EnvironmentOption, settings
 
 
 def custom_json_serializer(d):

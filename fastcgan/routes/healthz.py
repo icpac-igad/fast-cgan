@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Request
 
-from fastcgan.config import settings
 from fastcgan.models.shared import HealthCheck
 from fastcgan.routes import limiter
+from fastcgan.tools.config import settings
 
 router = APIRouter()
 

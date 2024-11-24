@@ -5,7 +5,7 @@ from pydantic_settings import BaseSettings
 from starlette.config import Config
 
 current_file_dir = os.path.dirname(os.path.realpath(__file__))
-env_path = os.path.join(current_file_dir, "..", ".env")
+env_path = os.path.join(current_file_dir, "..", "..", ".env")
 config = Config(env_path)
 
 
@@ -32,12 +32,8 @@ class PostgresSettings(BaseSettings):
     POSTGRES_PORT: int = config("POSTGRES_PORT", default=5432)
     POSTGRES_DB: str = config("POSTGRES_DB", default="postgres")
     POSTGRES_SYNC_PREFIX: str = config("POSTGRES_SYNC_PREFIX", default="postgresql://")
-    POSTGRES_ASYNC_PREFIX: str = config(
-        "POSTGRES_ASYNC_PREFIX", default="postgresql+asyncpg://"
-    )
-    POSTGRES_URI: str = (
-        f"{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_SERVER}:{POSTGRES_PORT}/{POSTGRES_DB}"
-    )
+    POSTGRES_ASYNC_PREFIX: str = config("POSTGRES_ASYNC_PREFIX", default="postgresql+asyncpg://")
+    POSTGRES_URI: str = f"{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_SERVER}:{POSTGRES_PORT}/{POSTGRES_DB}"
     POSTGRES_URL: str | None = config("POSTGRES_URL", default=None)
 
 
@@ -70,9 +66,7 @@ class RedisRateLimiterSettings(BaseSettings):
     REDIS_RATE_LIMIT_HOST: str = config("REDIS_RATE_LIMIT_HOST", default="localhost")
     REDIS_RATE_LIMIT_PORT: int = config("REDIS_RATE_LIMIT_PORT", default=6379)
     REDIS_RATE_LIMIT_DATABASE: int = config("REDIS_RATE_LIMIT_DATABASE", default=10)
-    REDIS_RATE_LIMIT_URL: str = (
-        f"redis://{REDIS_RATE_LIMIT_HOST}:{REDIS_RATE_LIMIT_PORT}/{REDIS_RATE_LIMIT_DATABASE}"
-    )
+    REDIS_RATE_LIMIT_URL: str = f"redis://{REDIS_RATE_LIMIT_HOST}:{REDIS_RATE_LIMIT_PORT}/{REDIS_RATE_LIMIT_DATABASE}"
 
 
 class DefaultRateLimitSettings(BaseSettings):
