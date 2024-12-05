@@ -15,8 +15,8 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
-from fastcgan.db.database import Base
-from fastcgan.db.database import async_db_engine as engine
+from fastcgan.db.database import Base  # noqa: F401
+from fastcgan.db.database import async_db_engine as engine  # noqa: F401
 from fastcgan.db.schema import *  # noqa: F403
 from fastcgan.middleware.client_cache_middleware import ClientCacheMiddleware
 from fastcgan.routes import limiter
@@ -36,11 +36,10 @@ from fastcgan.tools.config import (
 )
 from fastcgan.utils import cache, queue, rate_limit
 
-
 # -------------- database --------------
-async def create_tables() -> None:
-    async with engine().begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+# async def create_tables() -> None:
+#     async with engine().begin() as conn:
+#         await conn.run_sync(Base.metadata.create_all)
 
 
 # -------------- cache --------------
@@ -55,9 +54,7 @@ async def close_redis_cache_pool() -> None:
 
 # -------------- queue --------------
 async def create_redis_queue_pool() -> None:
-    queue.pool = await create_pool(
-        RedisSettings(host=settings.REDIS_QUEUE_HOST, port=settings.REDIS_QUEUE_PORT)
-    )
+    queue.pool = await create_pool(RedisSettings(host=settings.REDIS_QUEUE_HOST, port=settings.REDIS_QUEUE_PORT))
 
 
 async def close_redis_queue_pool() -> None:
@@ -98,8 +95,8 @@ def lifespan_factory(
     async def lifespan(app: FastAPI) -> AsyncGenerator:
         await set_threadpool_tokens()
 
-        if isinstance(settings, PostgresSettings) and create_tables_on_start:
-            await create_tables()
+        # if isinstance(settings, PostgresSettings) and create_tables_on_start:
+        #     await create_tables()
 
         if isinstance(settings, RedisCacheSettings):
             await create_redis_cache_pool()
@@ -200,9 +197,7 @@ def create_application(
     application.add_middleware(SlowAPIMiddleware)
 
     if isinstance(settings, ClientSideCacheSettings):
-        application.add_middleware(
-            ClientCacheMiddleware, max_age=settings.CLIENT_CACHE_MAX_AGE
-        )
+        application.add_middleware(ClientCacheMiddleware, max_age=settings.CLIENT_CACHE_MAX_AGE)
 
     if isinstance(settings, EnvironmentSettings):
         docs_router = APIRouter()

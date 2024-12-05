@@ -61,9 +61,7 @@ def try_data_download(
             target=target_file,
         )
     except Exception as err:
-        logger.error(
-            f"failed to download {model} forecast data for {request['date']} with error {err}"
-        )
+        logger.error(f"failed to download {model} forecast data for {request['date']} with error {err}")
         Path(target_file).unlink(missing_ok=True)
         return None
     else:
@@ -115,27 +113,15 @@ def run_ecmwf_ifs_sync(
                 file_name=file_name.replace(".grib2", ".nc"),
             )
             target_file = downloads_path / file_name
-            target_size = (
-                0
-                if not target_file.exists()
-                else target_file.stat().st_size / (1024 * 1024)
-            )
-            mask_size = (
-                0
-                if not mask_file.exists()
-                else mask_file.stat().st_size / (1024 * 1024)
-            )
+            target_size = 0 if not target_file.exists() else target_file.stat().st_size / (1024 * 1024)
+            mask_size = 0 if not mask_file.exists() else mask_file.stat().st_size / (1024 * 1024)
             if (
                 not (target_file.exists() or mask_file.exists())
                 or not (target_size >= min_grib2_size or mask_size >= min_nc_size)
                 or force_download
             ):
-                get_url = client._get_urls(
-                    request=request, target=str(target_file), use_index=False
-                )
-                logger.info(
-                    f"trying {model} data download with payload {request} on URL {get_url.urls[0]}"
-                )
+                get_url = client._get_urls(request=request, target=str(target_file), use_index=False)
+                logger.info(f"trying {model} data download with payload {request} on URL {get_url.urls[0]}")
                 for _ in range(re_try_times):
                     result = try_data_download(
                         client=client,
@@ -159,7 +145,5 @@ def run_ecmwf_ifs_sync(
                 grib2_files.append(file_name)
         return grib2_files
     else:
-        logger.warning(
-            f"IFS forecast data for {data_date} is not available. Please try again later!"
-        )
+        logger.warning(f"IFS forecast data for {data_date} is not available. Please try again later!")
         return None

@@ -17,6 +17,7 @@ class AppSettings(BaseSettings):
     APP_DESCRIPTION: str | None = config("APP_DESCRIPTION", default=None)
     APP_VERSION: str | None = config("APP_VERSION", default=None)
     APP_BASE_URL: str | None = config("BASE_URL", default="http://127.0.0.1:8000")
+    ALLOWED_ORIGINS: str | None = config("ALLOWED_ORIGINS", default="https://cgan.icpac.net,http://localhost:5173")
     LICENSE_NAME: str | None = config("LICENSE", default=None)
     CONTACT_NAME: str | None = config("CONTACT_NAME", default=None)
     CONTACT_EMAIL: str | None = config("CONTACT_EMAIL", default=None)
@@ -24,21 +25,11 @@ class AppSettings(BaseSettings):
 
 
 class AssetPathSettings(BaseSettings):
-    STATIC_ASSETS_DIR: str | None = config(
-        "STATIC_DIR", default=os.path.join(base_dir, "static")
-    )
-    CACHE_FILES_DIR: str | None = config(
-        "CACHE_DIR", default=os.path.join(base_dir, "cache")
-    )
-    FORECAST_DATA_DIR: str | None = config(
-        "FORECAST_DIR", default=os.path.join(base_dir, "data/forecasts")
-    )
-    IFS_DATA_DIR: str | None = config(
-        "IFS_DIR", default=os.path.join(FORECAST_DATA_DIR, "ecmwf")
-    )
-    GAN_DATA_DIR: str | None = config(
-        "GAN_DIR", default=os.path.join(FORECAST_DATA_DIR, "cgan")
-    )
+    STATIC_ASSETS_DIR: str | None = config("STATIC_DIR", default=os.path.join(base_dir, "static"))
+    CACHE_FILES_DIR: str | None = config("CACHE_DIR", default=os.path.join(base_dir, "cache"))
+    FORECAST_DATA_DIR: str | None = config("FORECAST_DIR", default=os.path.join(base_dir, "data/forecasts"))
+    IFS_DATA_DIR: str | None = config("IFS_DIR", default=os.path.join(FORECAST_DATA_DIR, "ecmwf"))
+    GAN_DATA_DIR: str | None = config("GAN_DIR", default=os.path.join(FORECAST_DATA_DIR, "cgan"))
     ASSETS_DIR_MAP: dict[str, str] = {
         "static": STATIC_ASSETS_DIR,
         "cache": CACHE_FILES_DIR,
@@ -64,12 +55,8 @@ class PostgresSettings(BaseSettings):
     POSTGRES_PORT: int = config("POSTGRES_PORT", default=5432)
     POSTGRES_DB: str = config("POSTGRES_DB", default="postgres")
     POSTGRES_SYNC_PREFIX: str = config("POSTGRES_SYNC_PREFIX", default="postgresql://")
-    POSTGRES_ASYNC_PREFIX: str = config(
-        "POSTGRES_ASYNC_PREFIX", default="postgresql+asyncpg://"
-    )
-    POSTGRES_URI: str = (
-        f"{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_SERVER}:{POSTGRES_PORT}/{POSTGRES_DB}"
-    )
+    POSTGRES_ASYNC_PREFIX: str = config("POSTGRES_ASYNC_PREFIX", default="postgresql+asyncpg://")
+    POSTGRES_URI: str = f"{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_SERVER}:{POSTGRES_PORT}/{POSTGRES_DB}"
     POSTGRES_URL: str | None = config("POSTGRES_URL", default=None)
 
 
@@ -102,9 +89,7 @@ class RedisRateLimiterSettings(BaseSettings):
     REDIS_RATE_LIMIT_HOST: str = config("REDIS_RATE_LIMIT_HOST", default="localhost")
     REDIS_RATE_LIMIT_PORT: int = config("REDIS_RATE_LIMIT_PORT", default=6379)
     REDIS_RATE_LIMIT_DATABASE: int = config("REDIS_RATE_LIMIT_DATABASE", default=10)
-    REDIS_RATE_LIMIT_URL: str = (
-        f"redis://{REDIS_RATE_LIMIT_HOST}:{REDIS_RATE_LIMIT_PORT}/{REDIS_RATE_LIMIT_DATABASE}"
-    )
+    REDIS_RATE_LIMIT_URL: str = f"redis://{REDIS_RATE_LIMIT_HOST}:{REDIS_RATE_LIMIT_PORT}/{REDIS_RATE_LIMIT_DATABASE}"
 
 
 class DefaultRateLimitSettings(BaseSettings):
@@ -149,9 +134,7 @@ def get_asset_dir_path(asset: Literal["static", "cache"]) -> Path:
     return asset_path
 
 
-def get_cached_file_base_path(
-    file_type: Literal["media", "data"] | None = "media"
-) -> Path:
+def get_cached_file_base_path(file_type: Literal["media", "data"] | None = "media") -> Path:
     cache_path = get_asset_dir_path("cache") / file_type
     if not cache_path.exists():
         cache_path.mkdir(parents=True)
@@ -159,7 +142,9 @@ def get_cached_file_base_path(
 
 
 def get_cached_file_url(file_path: str | Path) -> str:
-    media_path = str(file_path).replace(
-        f"{settings.ASSETS_DIR_MAP['cache']}/media/", ""
-    )
+    media_path = str(file_path).replace(f"{settings.ASSETS_DIR_MAP['cache']}/media/", "")
     return f"{settings.APP_BASE_URL}{settings.CACHE_BASE_URL}/{media_path}"
+
+
+def get_allowed_cor_origins() -> list[str]:
+    return settings.ALLOWED_ORIGINS.split(",")

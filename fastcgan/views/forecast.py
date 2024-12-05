@@ -177,7 +177,7 @@ async def cgan_forecast_ensemble(
     data_date: str | None = None,
     mask_area: str | None = COUNTRY_NAMES[0],
     color_style: str | None = COLOR_SCHEMES[0],
-    max_ensemble_plots: int | None = 50,
+    max_ens_plots: int | None = 50,
 ) -> list[Path]:
     source = "cgan"
     start_time = start_time if start_time != ValidStartTime.combine else ValidStartTime.six
@@ -197,7 +197,7 @@ async def cgan_forecast_ensemble(
         mask_area=mask_area,
         color_style=color_style,
         ensemble=True,
-        max_ensemble_plots=max_ensemble_plots,
+        max_ens_plots=max_ens_plots,
     )
     if not maps_path[0].exists():
         data_store = get_data_store_path(source=source)
@@ -215,7 +215,7 @@ async def cgan_forecast_ensemble(
             region=mask_area,
             file_name=str(maps_path[-1]),
             show_plot=False,
-            max_num_plots=max_ensemble_plots,
+            max_num_plots=max_ens_plots,
         )
     return maps_path
 

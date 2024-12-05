@@ -27,10 +27,7 @@ async def get_mask_areas() -> list[settings.MaskArea]:
 
 @router.get("/color-styles", response_model=list[settings.VisualizationColorStyle])
 async def get_color_styles() -> list[settings.VisualizationColorStyle]:
-    return [
-        settings.VisualizationColorStyle(name=color_style)
-        for color_style in COLOR_SCHEMES
-    ]
+    return [settings.VisualizationColorStyle(name=color_style) for color_style in COLOR_SCHEMES]
 
 
 @router.get("/locations", response_model=list[settings.MaskArea])
@@ -38,14 +35,9 @@ async def get_predefined_locations(
     q: str | None = None,
 ) -> list[settings.MaskArea]:
     mask_area = (
-        COUNTRY_NAMES[0]
-        if q is None or q == ""
-        else [area for area in COUNTRY_NAMES if q.lower() in area.lower()]
+        COUNTRY_NAMES[0] if q is None or q == "" else [area for area in COUNTRY_NAMES if q.lower() in area.lower()]
     )
     if isinstance(mask_area, list):
         mask_area = COUNTRY_NAMES[0] if not len(mask_area) else mask_area[0]
     locations = get_locations_data_for_region(mask_area)
-    return [
-        settings.MaskArea(name=f"{location['name']}-{location['country']}")
-        for location in locations
-    ]
+    return [settings.MaskArea(name=f"{location['name']}-{location['country']}") for location in locations]

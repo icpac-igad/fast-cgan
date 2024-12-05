@@ -1,14 +1,14 @@
-from fastapi import APIRouter
-from show_forecasts.constants import COLOR_SCHEMES, COUNTRY_NAMES
+from fastapi import APIRouter, Query
 
 from fastcgan.models import settings
-from fastcgan.tools.config import get_cached_file_url
-from fastcgan.tools.enums import (
-    AccumulationTime,
-    IfsDataParameter,
-    PrecipitationUnit,
-    ValidStartTime,
+from fastcgan.models.routes import (
+    GanEnsembleHistogramParams,
+    GanEnsembleParams,
+    GanForecastParams,
+    GanThresholdChanceParams,
+    OpenIfsParams,
 )
+from fastcgan.tools.config import get_cached_file_url
 from fastcgan.views.forecast import (
     cgan_forecast,
     cgan_forecast_ensemble,
@@ -27,19 +27,9 @@ router = APIRouter()
     response_model_exclude_none=True,
 )
 async def get_open_ifs_forecast(
-    vis_param: IfsDataParameter | None = IfsDataParameter.tp,
-    plot_units: PrecipitationUnit | None = PrecipitationUnit.hour6,
-    data_date: str | None = None,
-    mask_area: str | None = COUNTRY_NAMES[0],
-    color_style: str | None = COLOR_SCHEMES[0],
+    params: OpenIfsParams = Query(),
 ) -> list[settings.ForecastMap]:
-    imgs_paths = await open_ifs_forecast(
-        vis_param=vis_param,
-        data_date=data_date,
-        mask_area=mask_area,
-        color_style=color_style,
-        plot_units=plot_units,
-    )
+    imgs_paths = await open_ifs_forecast(**params.model_dump(exclude_unset=True))
     return [(settings.ForecastMap(image_url=get_cached_file_url(file_path=img_path))) for img_path in imgs_paths]
 
 
@@ -49,18 +39,10 @@ async def get_open_ifs_forecast(
     response_model_exclude_none=True,
 )
 async def get_open_ifs_forecast_ensemble_plots(
-    vis_param: IfsDataParameter | None = IfsDataParameter.tp,
-    plot_units: PrecipitationUnit | None = PrecipitationUnit.hour6,
-    data_date: str | None = None,
-    mask_area: str | None = COUNTRY_NAMES[0],
-    color_style: str | None = COLOR_SCHEMES[0],
+    params: OpenIfsParams = Query(),
 ) -> list[settings.ForecastMap]:
     imgs_paths = await open_ifs_forecast_ensemble(
-        vis_param=vis_param,
-        data_date=data_date,
-        mask_area=mask_area,
-        color_style=color_style,
-        plot_units=plot_units,
+        **params.model_dump(exclude_unset=True),
     )
     return [(settings.ForecastMap(image_url=get_cached_file_url(file_path=img_path))) for img_path in imgs_paths]
 
@@ -71,23 +53,9 @@ async def get_open_ifs_forecast_ensemble_plots(
     response_model_exclude_none=True,
 )
 async def get_cgan_forecast(
-    vis_param: IfsDataParameter | None = IfsDataParameter.tp,
-    plot_units: PrecipitationUnit | None = PrecipitationUnit.hour6,
-    acc_time: AccumulationTime | None = AccumulationTime.hour6,
-    start_time: ValidStartTime | None = ValidStartTime.combine,
-    data_date: str | None = None,
-    mask_area: str | None = COUNTRY_NAMES[0],
-    color_style: str | None = COLOR_SCHEMES[0],
+    params: GanForecastParams = Query(),
 ) -> list[settings.ForecastMap]:
-    imgs_paths = await cgan_forecast(
-        vis_param=vis_param,
-        acc_time=acc_time,
-        start_time=start_time,
-        data_date=data_date,
-        mask_area=mask_area,
-        color_style=color_style,
-        plot_units=plot_units,
-    )
+    imgs_paths = await cgan_forecast(**params.model_dump(exclude_unset=True))
     return [(settings.ForecastMap(image_url=get_cached_file_url(file_path=img_path))) for img_path in imgs_paths]
 
 
@@ -97,23 +65,9 @@ async def get_cgan_forecast(
     response_model_exclude_none=True,
 )
 async def get_cgan_forecast_ensemble_plot(
-    vis_param: IfsDataParameter | None = IfsDataParameter.tp,
-    plot_units: PrecipitationUnit | None = PrecipitationUnit.hour6,
-    start_time: ValidStartTime | None = ValidStartTime.combine,
-    data_date: str | None = None,
-    mask_area: str | None = COUNTRY_NAMES[0],
-    color_style: str | None = COLOR_SCHEMES[0],
-    max_ensemble_plots: int | None = 10,
+    params: GanEnsembleParams = Query(),
 ) -> list[settings.ForecastMap]:
-    imgs_paths = await cgan_forecast_ensemble(
-        vis_param=vis_param,
-        start_time=start_time,
-        data_date=data_date,
-        mask_area=mask_area,
-        color_style=color_style,
-        plot_units=plot_units,
-        max_ensemble_plots=max_ensemble_plots,
-    )
+    imgs_paths = await cgan_forecast_ensemble(**params.model_dump(exclude_unset=True))
     return [(settings.ForecastMap(image_url=get_cached_file_url(file_path=img_path))) for img_path in imgs_paths]
 
 
@@ -123,25 +77,9 @@ async def get_cgan_forecast_ensemble_plot(
     response_model_exclude_none=True,
 )
 async def get_cgan_theshold_chance_plot(
-    vis_param: IfsDataParameter | None = IfsDataParameter.tp,
-    plot_units: PrecipitationUnit | None = PrecipitationUnit.hour6,
-    start_time: ValidStartTime | None = ValidStartTime.combine,
-    data_date: str | None = None,
-    mask_area: str | None = COUNTRY_NAMES[0],
-    color_style: str | None = COLOR_SCHEMES[0],
-    threshold: float | None = 5,
-    show_percentages: bool | None = False,
+    params: GanThresholdChanceParams = Query(),
 ) -> list[settings.ForecastMap]:
-    imgs_paths = await cgan_threshold_chance(
-        vis_param=vis_param,
-        start_time=start_time,
-        data_date=data_date,
-        mask_area=mask_area,
-        color_style=color_style,
-        plot_units=plot_units,
-        show_percentages=show_percentages,
-        threshold=threshold,
-    )
+    imgs_paths = await cgan_threshold_chance(**params.model_dump(exclude_unset=True))
     return [(settings.ForecastMap(image_url=get_cached_file_url(file_path=img_path))) for img_path in imgs_paths]
 
 
@@ -151,36 +89,13 @@ async def get_cgan_theshold_chance_plot(
     response_model_exclude_none=True,
 )
 async def get_cgan_histogram_plot(
-    plot_units: PrecipitationUnit | None = PrecipitationUnit.hour6,
-    data_date: str | None = None,
-    mask_area: str | None = COUNTRY_NAMES[0],
-    location: str | None = "LatLng",
-    latitude: float | None = None,
-    longitude: float | None = None,
-    num_bins: int | None = 10,
-    probability: float | None = None,
+    params: GanEnsembleHistogramParams = Query(),
 ) -> list[settings.ForecastMap]:
     imgs_paths = []
-    if latitude is not None and longitude is not None:
-        imgs_paths = await cgan_local_histogram(
-            data_date=data_date,
-            plot_units=plot_units,
-            mask_area=mask_area,
-            latitude=latitude,
-            longitude=longitude,
-            probability=probability,
-            num_bins=num_bins,
-        )
+    if params.latitude is not None and params.longitude is not None:
+        imgs_paths = await cgan_local_histogram(**params.model_dump(exclude_unset=True))
 
-    elif location is not None and location != "LatLng":
-        location, country = location.split("-")
-        imgs_paths = await cgan_local_histogram(
-            data_date=data_date,
-            plot_units=plot_units,
-            mask_area=mask_area,
-            country=country,
-            location=location,
-            probability=probability,
-            num_bins=num_bins,
-        )
+    elif params.location is not None and params.location != "LatLng":
+        # location, country = params.location.split("-")
+        imgs_paths = await cgan_local_histogram(**params.model_dump(exclude_unset=True))
     return [(settings.ForecastMap(image_url=get_cached_file_url(file_path=img_path))) for img_path in imgs_paths]
