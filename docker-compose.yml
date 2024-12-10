@@ -5,12 +5,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    # command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     command: gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
     env_file:
       - ./.env
     ports:
-      - ${HOST_NET_IP:-172.17.0.1}:${APP_HOST_PORT:-8000}:8000
+      - ${APP_HOST_IP:-172.17.0.1}:${APP_HOST_PORT:-8000}:8000
+    volumes:
+      - ${FORECAST_DIR:-./data}:${APP_DATA_DIR:-/code/app/data}
     depends_on:
       - redis
 
@@ -20,4 +21,4 @@ services:
     volumes:
       - ./data/redis:/data
     ports:
-      - ${HOST_NET_IP:-172.17.0.1}:${REDIS_CACHE_PORT:-6379}:6379
+      - ${REDIS_CACHE_HOST:-172.17.0.1}:${REDIS_CACHE_PORT:-6379}:6379
