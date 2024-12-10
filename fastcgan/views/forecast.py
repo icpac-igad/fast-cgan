@@ -197,7 +197,7 @@ async def cgan_forecast_ensemble(
         mask_area=mask_area,
         color_style=color_style,
         ensemble=True,
-        max_ens_plots=max_ens_plots,
+        max_ensemble_plots=max_ens_plots,
     )
     if not maps_path[0].exists():
         data_store = get_data_store_path(source=source)

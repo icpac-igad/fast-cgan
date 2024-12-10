@@ -1,5 +1,6 @@
 import os
 from enum import Enum
+from json import loads
 from pathlib import Path
 from typing import Literal
 
@@ -17,6 +18,7 @@ class AppSettings(BaseSettings):
     APP_DESCRIPTION: str | None = config("APP_DESCRIPTION", default=None)
     APP_VERSION: str | None = config("APP_VERSION", default=None)
     APP_BASE_URL: str | None = config("BASE_URL", default="http://127.0.0.1:8000")
+    APP_DUMPS_DIR: str | None = config("DUMPS_DIR", default=os.path.join(base_dir, "dumps"))
     ALLOWED_ORIGINS: str | None = config("ALLOWED_ORIGINS", default="https://cgan.icpac.net,http://localhost:5173")
     LICENSE_NAME: str | None = config("LICENSE", default=None)
     CONTACT_NAME: str | None = config("CONTACT_NAME", default=None)
@@ -125,6 +127,11 @@ class Settings(
 
 
 settings = Settings()
+
+
+def get_major_towns_data():
+    with open(f"{settings.APP_DUMPS_DIR}/ea-major-towns.json") as dp:
+        return loads(dp.read())
 
 
 def get_asset_dir_path(asset: Literal["static", "cache"]) -> Path:
