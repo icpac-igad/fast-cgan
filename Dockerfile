@@ -14,6 +14,8 @@ RUN poetry export -f requirements.txt --output requirements.txt --without-hashes
 # --------- final image build ---------
 FROM python:3.13 AS runner
 
+RUN apt-get update -y && apt-get install libeccodes-dev -y --no-install-recommends
+
 WORKDIR /code
 
 COPY --from=requirements-stage /tmp/requirements.txt /code/requirements.txt
