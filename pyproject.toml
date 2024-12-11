@@ -33,6 +33,8 @@ show_forecasts = { git = "https://github.com/Fenwick-Cooper/show-forecasts.git",
 ecmwf-opendata = "^0.3.10"
 sysrsync = "^1.1.1"
 eccodes = "2.38.3"
+beautifulsoup4 = "^4.12.3"
+requests = "^2.32.3"
 
 
 [tool.poetry.group.dev.dependencies]

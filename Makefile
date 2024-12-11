@@ -30,7 +30,7 @@ pre-commit:
 
 .PHONY: up
 up:
-	poetry run uvicorn fastcgan.main:app --reload
+	poetry run uvicorn fastcgan.main:app  --host 0.0.0.0 --port 8000 --reload
 
 .PHONY: migrations
 migrations:

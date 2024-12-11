@@ -126,18 +126,17 @@ async def cgan_forecast(
     plot_units: PrecipitationUnit | None = PrecipitationUnit.hour6,
     acc_time: AccumulationTime | None = AccumulationTime.hour6,
     start_time: ValidStartTime | None = ValidStartTime.six,
-    data_date: str | None = None,
+    forecast_date: str | None = None,
     mask_area: str | None = COUNTRY_NAMES[0],
     color_style: str | None = COLOR_SCHEMES[0],
 ) -> list[list[Path], xr.Dataset | None]:
-    source = "cgan"
-    if data_date is None:
-        data_dates = get_forecast_data_dates(
+    source = "cgan-forecast"
+    if forecast_date is None:
+        forecast_date = get_forecast_data_dates(
             mask_region=COUNTRY_NAMES[0],
             source=source,
-        )
-        data_date = data_dates[0]
-    data_date_obj = datetime.strptime(data_date, "%b %d, %Y")
+        )[0]
+    data_date_obj = datetime.strptime(forecast_date, "%b %d, %Y")
     maps_path = await get_forecast_maps_path(
         source=source,
         vis_param=vis_param,
@@ -174,20 +173,19 @@ async def cgan_forecast_ensemble(
     vis_param: IfsDataParameter | None = IfsDataParameter.tp,
     plot_units: PrecipitationUnit | None = PrecipitationUnit.hour6,
     start_time: ValidStartTime | None = ValidStartTime.six,
-    data_date: str | None = None,
+    forecast_date: str | None = None,
     mask_area: str | None = COUNTRY_NAMES[0],
     color_style: str | None = COLOR_SCHEMES[0],
     max_ens_plots: int | None = 50,
 ) -> list[Path]:
-    source = "cgan"
+    source = "cgan-forecast"
     start_time = start_time if start_time != ValidStartTime.combine else ValidStartTime.six
-    if data_date is None:
-        data_dates = get_forecast_data_dates(
+    if forecast_date is None:
+        forecast_date = get_forecast_data_dates(
             mask_region=COUNTRY_NAMES[0],
             source=source,
-        )
-        data_date = data_dates[0]
-    data_date_obj = datetime.strptime(data_date, "%b %d, %Y")
+        )[0]
+    data_date_obj = datetime.strptime(forecast_date, "%b %d, %Y")
     maps_path = await get_forecast_maps_path(
         source=source,
         vis_param=vis_param,
@@ -225,19 +223,18 @@ async def cgan_threshold_chance(
     vis_param: IfsDataParameter | None = IfsDataParameter.tp,
     plot_units: PrecipitationUnit | None = PrecipitationUnit.hour6,
     start_time: ValidStartTime | None = ValidStartTime.six,
-    data_date: str | None = None,
+    forecast_date: str | None = None,
     mask_area: str | None = COUNTRY_NAMES[0],
     color_style: str | None = COLOR_SCHEMES[0],
     show_percentages: bool | None = None,
 ) -> list[Path]:
-    source = "cgan"
-    if data_date is None:
-        data_dates = get_forecast_data_dates(
+    source = "cgan-forecast"
+    if forecast_date is None:
+        forecast_date = get_forecast_data_dates(
             mask_region=COUNTRY_NAMES[0],
             source=source,
-        )
-        data_date = data_dates[0]
-    data_date_obj = datetime.strptime(data_date, "%b %d, %Y")
+        )[0]
+    data_date_obj = datetime.strptime(forecast_date, "%b %d, %Y")
     maps_path = await get_forecast_maps_path(
         source=source,
         vis_param=vis_param,
@@ -271,7 +268,7 @@ async def cgan_threshold_chance(
 
 
 async def cgan_local_histogram(
-    data_date: str | None = None,
+    forecast_date: str | None = None,
     location: str | None = "LatLng",
     country: str | None = None,
     latitude: float | None = None,
@@ -297,14 +294,13 @@ async def cgan_local_histogram(
 
     if marker_map.exists():
         map_images.append(marker_map)
-        source = "cgan"
-        if data_date is None:
-            data_dates = get_forecast_data_dates(
+        source = "cgan-forecast"
+        if forecast_date is None:
+            forecast_date = get_forecast_data_dates(
                 mask_region=COUNTRY_NAMES[0],
                 source=source,
-            )
-            data_date = data_dates[0]
-        data_date_obj = datetime.strptime(data_date, "%b %d, %Y")
+            )[0]
+        data_date_obj = datetime.strptime(forecast_date, "%b %d, %Y")
         hist_path = await get_local_histogram_chart(
             data_date=data_date_obj,
             location=location,

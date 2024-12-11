@@ -27,7 +27,7 @@ class BaseGanForecastParams(CustomStyleForecastProduct):
     start_time: ValidStartTime | None = ValidStartTime.combine
 
 
-class GanForecastParams(CustomStyleForecastProduct):
+class GanForecastParams(BaseGanForecastParams):
     acc_time: AccumulationTime | None = AccumulationTime.hour6
 
 

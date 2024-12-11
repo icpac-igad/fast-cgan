@@ -1,6 +1,7 @@
 import os
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import Literal
 
 import xarray as xr
 from loguru import logger
@@ -39,15 +40,11 @@ def get_relevant_forecast_steps(start: int | None = 30, final: int | None = 54, 
     return list(range(start, final + 1, step))
 
 
-# data directory structure
-# store -> source (ecmwf, gbmc, cgan, jobs)
-# for ecmwf, gbmc, cgan; branches to region/year/month/file_name
-# for jobs; subdirectories include downloads, grib2, gbmc
 def get_data_store_path(source: str, mask_region: str | None = None) -> Path:
     data_dir_path = (
-        Path(settings.FORECAST_DATA_DIR) / source
+        Path(settings.APP_DATA_DIR) / source
         if mask_region is None
-        else Path(settings.FORECAST_DATA_DIR) / source / mask_region
+        else Path(settings.APP_DATA_DIR) / source / mask_region
     )
 
     # create directory tree
@@ -75,19 +72,18 @@ def get_dataset_file_path(source: str, data_date: datetime, file_name: str, mask
 
 
 # recursive function that calls itself until all directories in data_path are traversed
-def get_directory_files(data_path: Path, files: list[Path] | None = []) -> list[Path]:
+def get_directory_files(data_path: Path, files: set[Path] | None = set()) -> set[Path]:
     for item in data_path.iterdir():
         if item.is_file():
-            files.append(item)
+            files.add(item)
         elif item.is_dir():
-            files.extend(get_directory_files(data_path=item, files=files))
-    # TODO: re-factor to remove below filter step. Could be expensive on more data
-    return list(set(files))
+            files.update(get_directory_files(data_path=item, files=files))
+    return files
 
 
 def get_forecast_data_files(mask_region: str, source: str) -> list[str]:
     store_path = get_data_store_path(source=source, mask_region=mask_region)
-    data_files = get_directory_files(data_path=store_path, files=[])
+    data_files = get_directory_files(data_path=store_path, files=set())
     return [str(dfile).split("/")[-1] for dfile in data_files]
 
 
@@ -99,7 +95,11 @@ def get_ecmwf_files_for_date(data_date: datetime, mask_region: str | None = "Eas
     ]
 
 
-def get_forecast_data_dates(mask_region: str, source: str, strict: bool | None = True) -> list[str]:
+def get_forecast_data_dates(
+    mask_region: str,
+    source: Literal["cgan-forecast", "cgan-ifs", "open-ifs"],
+    strict: bool | None = True,
+) -> list[str]:
     data_files = get_forecast_data_files(source=source, mask_region=mask_region)
     data_dates = sorted({dfile.replace(".nc", "").split("-")[2].split("_")[0] for dfile in data_files})
     if not strict or source != "ecmwf":

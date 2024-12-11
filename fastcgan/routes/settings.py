@@ -11,7 +11,7 @@ router = APIRouter()
 
 @router.get("/data-dates", response_model=list[settings.ForecastDate])
 async def get_forecast_dates(
-    forecast: Literal["cgan", "open-ifs"] | None = "cgan",
+    forecast: Literal["cgan-forecast", "open-ifs"] | None = "cgan-forecast",
 ) -> list[settings.ForecastDate]:
     data_dates = get_forecast_data_dates(
         mask_region=COUNTRY_NAMES[0],

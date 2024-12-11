@@ -18,6 +18,7 @@ class AppSettings(BaseSettings):
     APP_DESCRIPTION: str | None = config("APP_DESCRIPTION", default=None)
     APP_VERSION: str | None = config("APP_VERSION", default=None)
     APP_BASE_URL: str | None = config("BASE_URL", default="http://127.0.0.1:8000")
+    APP_SUBPATH: str | None = config("SUB_PATH", default="")
     APP_DUMPS_DIR: str | None = config("DUMPS_DIR", default=os.path.join(base_dir, "dumps"))
     ALLOWED_ORIGINS: str | None = config("ALLOWED_ORIGINS", default="https://cgan.icpac.net,http://localhost:5173")
     LICENSE_NAME: str | None = config("LICENSE", default=None)
@@ -29,14 +30,14 @@ class AppSettings(BaseSettings):
 class AssetPathSettings(BaseSettings):
     STATIC_ASSETS_DIR: str | None = config("STATIC_DIR", default=os.path.join(base_dir, "static"))
     CACHE_FILES_DIR: str | None = config("CACHE_DIR", default=os.path.join(base_dir, "cache"))
-    APP_DATA_DIR: str | None = config("APP_DATA_DIR", default=os.path.join(base_dir, "data"))
+    APP_DATA_DIR: str | None = config("APP_DATA_DIR", default=os.path.join(base_dir, "./data"))
     IFS_DATA_DIR: str | None = config("IFS_DIR", default=os.path.join(APP_DATA_DIR, "open-ifs"))
-    GAN_DATA_DIR: str | None = config("GAN_DIR", default=os.path.join(APP_DATA_DIR, "cgan"))
+    GAN_DATA_DIR: str | None = config("GAN_DIR", default=os.path.join(APP_DATA_DIR, "cgan-forecast"))
     ASSETS_DIR_MAP: dict[str, str] = {
         "static": STATIC_ASSETS_DIR,
         "cache": CACHE_FILES_DIR,
         "forecasts": APP_DATA_DIR,
-        "cgan": GAN_DATA_DIR,
+        "cgan-forecast": GAN_DATA_DIR,
         "open_ifs": IFS_DATA_DIR,
     }
     STATIC_BASE_URL: str | None = config("STATIC_URL", default="/static")
@@ -150,7 +151,7 @@ def get_cached_file_base_path(file_type: Literal["media", "data"] | None = "medi
 
 def get_cached_file_url(file_path: str | Path) -> str:
     media_path = str(file_path).replace(f"{settings.ASSETS_DIR_MAP['cache']}/media/", "")
-    return f"{settings.APP_BASE_URL}{settings.CACHE_BASE_URL}/{media_path}"
+    return f"{settings.APP_BASE_URL}{settings.APP_SUBPATH}{settings.CACHE_BASE_URL}/{media_path}"
 
 
 def get_allowed_cor_origins() -> list[str]:

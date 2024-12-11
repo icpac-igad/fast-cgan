@@ -87,16 +87,12 @@ def lifespan_factory(
         | RedisRateLimiterSettings
         | EnvironmentSettings
     ),
-    create_tables_on_start: bool = True,
 ) -> Callable[[FastAPI], _AsyncGeneratorContextManager[Any]]:
     """Factory to create a lifespan async context manager for a FastAPI app."""
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncGenerator:
         await set_threadpool_tokens()
-
-        # if isinstance(settings, PostgresSettings) and create_tables_on_start:
-        #     await create_tables()
 
         if isinstance(settings, RedisCacheSettings):
             await create_redis_cache_pool()
@@ -123,7 +119,6 @@ def lifespan_factory(
 
 # -------------- application --------------
 def create_application(
-    router: APIRouter,
     settings: (
         PostgresSettings
         | RedisCacheSettings
@@ -133,7 +128,6 @@ def create_application(
         | RedisRateLimiterSettings
         | EnvironmentSettings
     ),
-    create_tables_on_start: bool = True,
     **kwargs: Any,
 ) -> FastAPI:
     """Creates and configures a FastAPI application based on the provided settings.
@@ -189,7 +183,7 @@ def create_application(
     if isinstance(settings, EnvironmentSettings):
         kwargs.update({"docs_url": None, "redoc_url": None, "openapi_url": None})
 
-    lifespan = lifespan_factory(settings, create_tables_on_start=create_tables_on_start)
+    lifespan = lifespan_factory(settings)
 
     application = FastAPI(lifespan=lifespan, **kwargs)
     application.state.limiter = limiter
@@ -204,7 +198,7 @@ def create_application(
 
         @docs_router.get("/redoc", include_in_schema=False)
         async def get_redoc_documentation() -> fastapi.responses.HTMLResponse:
-            return get_redoc_html(openapi_url="/openapi.json", title="docs")
+            return get_redoc_html(openapi_url=f"{settings.APP_SUBPATH}/openapi.json", title="docs")
 
         @docs_router.get("/openapi.json", include_in_schema=False)
         async def openapi() -> dict[str, Any]:
@@ -220,7 +214,7 @@ def create_application(
 
             @docs_router.get("/docs", include_in_schema=False)
             async def get_swagger_documentation() -> fastapi.responses.HTMLResponse:
-                return get_swagger_ui_html(openapi_url="/openapi.json", title="docs")
+                return get_swagger_ui_html(openapi_url=f"{settings.APP_SUBPATH}/openapi.json", title="docs")
 
             application.include_router(docs_router)
 

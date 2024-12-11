@@ -1,5 +1,4 @@
 # from fastcgan.routes import router
-from fastapi import APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 
 from fastcgan.routes.forecast import router as forecast_router
@@ -9,7 +8,7 @@ from fastcgan.tools import enums
 from fastcgan.tools.config import get_allowed_cor_origins, settings
 from fastcgan.tools.setup import create_application
 
-app = create_application(router=APIRouter(prefix="/api"), settings=settings)
+app = create_application(settings=settings, root_path=settings.APP_SUBPATH)
 
 app.add_middleware(
     CORSMiddleware,
