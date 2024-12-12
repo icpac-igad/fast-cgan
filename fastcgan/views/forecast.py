@@ -34,18 +34,17 @@ from fastcgan.views.tools import (
 async def open_ifs_forecast(
     vis_param: IfsDataParameter | None = IfsDataParameter.tp,
     plot_units: PrecipitationUnit | None = PrecipitationUnit.hour6,
-    data_date: str | None = None,
+    forecast_date: str | None = None,
     mask_area: str | None = COUNTRY_NAMES[0],
     color_style: str | None = COLOR_SCHEMES[0],
 ) -> list[list[Path], xr.Dataset | None]:
     source = "open-ifs"
-    if data_date is None:
-        data_dates = get_forecast_data_dates(
+    if forecast_date is None:
+        forecast_date = get_forecast_data_dates(
             mask_region=mask_area,
             source=source,
-        )
-        data_date = data_dates[0]
-    data_date_obj = datetime.strptime(data_date, "%b %d, %Y")
+        )[0]
+    data_date_obj = datetime.strptime(forecast_date, "%b %d, %Y")
     maps_path = await get_forecast_maps_path(
         source=source,
         vis_param=vis_param,
@@ -79,18 +78,18 @@ async def open_ifs_forecast(
 async def open_ifs_forecast_ensemble(
     vis_param: IfsDataParameter | None = IfsDataParameter.tp,
     plot_units: PrecipitationUnit | None = PrecipitationUnit.hour6,
-    data_date: str | None = None,
+    forecast_date: str | None = None,
     mask_area: str | None = COUNTRY_NAMES[0],
     color_style: str | None = COLOR_SCHEMES[0],
 ) -> list[Path]:
+    vis_param = IfsDataParameter.tp
     source = "open-ifs"
-    if data_date is None:
-        data_dates = get_forecast_data_dates(
+    if forecast_date is None:
+        forecast_date = get_forecast_data_dates(
             mask_region=COUNTRY_NAMES[0],
             source=source,
-        )
-        data_date = data_dates[0]
-    data_date_obj = datetime.strptime(data_date, "%b %d, %Y")
+        )[0]
+    data_date_obj = datetime.strptime(forecast_date, "%b %d, %Y")
     maps_path = await get_forecast_maps_path(
         source=source,
         vis_param=vis_param,

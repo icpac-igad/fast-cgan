@@ -40,11 +40,14 @@ def get_relevant_forecast_steps(start: int | None = 30, final: int | None = 54, 
     return list(range(start, final + 1, step))
 
 
-def get_data_store_path(source: str, mask_region: str | None = None) -> Path:
+def get_data_store_path(
+    source: Literal["cgan-forecast", "cgan-ifs", "open-ifs"],
+    mask_region: str | None = None,
+) -> Path:
     data_dir_path = (
-        Path(settings.APP_DATA_DIR) / source
+        Path(settings.ASSETS_DIR_MAP[source])
         if mask_region is None
-        else Path(settings.APP_DATA_DIR) / source / mask_region
+        else Path(settings.ASSETS_DIR_MAP[source]) / mask_region
     )
 
     # create directory tree
@@ -81,7 +84,7 @@ def get_directory_files(data_path: Path, files: set[Path] | None = set()) -> set
     return files
 
 
-def get_forecast_data_files(mask_region: str, source: str) -> list[str]:
+def get_forecast_data_files(mask_region: str, source: Literal["cgan-forecast", "cgan-ifs", "open-ifs"]) -> list[str]:
     store_path = get_data_store_path(source=source, mask_region=mask_region)
     data_files = get_directory_files(data_path=store_path, files=set())
     return [str(dfile).split("/")[-1] for dfile in data_files]
@@ -102,7 +105,7 @@ def get_forecast_data_dates(
 ) -> list[str]:
     data_files = get_forecast_data_files(source=source, mask_region=mask_region)
     data_dates = sorted({dfile.replace(".nc", "").split("-")[2].split("_")[0] for dfile in data_files})
-    if not strict or source != "ecmwf":
+    if not strict or source != "open-ifs":
         return list(
             reversed(
                 [

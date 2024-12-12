@@ -31,14 +31,14 @@ class AssetPathSettings(BaseSettings):
     STATIC_ASSETS_DIR: str | None = config("STATIC_DIR", default=os.path.join(base_dir, "static"))
     CACHE_FILES_DIR: str | None = config("CACHE_DIR", default=os.path.join(base_dir, "cache"))
     APP_DATA_DIR: str | None = config("APP_DATA_DIR", default=os.path.join(base_dir, "./data"))
-    IFS_DATA_DIR: str | None = config("IFS_DIR", default=os.path.join(APP_DATA_DIR, "open-ifs"))
-    GAN_DATA_DIR: str | None = config("GAN_DIR", default=os.path.join(APP_DATA_DIR, "cgan-forecast"))
+    IFS_DATA_DIR: str | None = config("IFS_DATA_DIR", default=os.path.join(APP_DATA_DIR, "open-ifs"))
+    GAN_DATA_DIR: str | None = config("GAN_DATA_DIR", default=os.path.join(APP_DATA_DIR, "cgan-forecast"))
     ASSETS_DIR_MAP: dict[str, str] = {
         "static": STATIC_ASSETS_DIR,
         "cache": CACHE_FILES_DIR,
         "forecasts": APP_DATA_DIR,
         "cgan-forecast": GAN_DATA_DIR,
-        "open_ifs": IFS_DATA_DIR,
+        "open-ifs": IFS_DATA_DIR,
     }
     STATIC_BASE_URL: str | None = config("STATIC_URL", default="/static")
     CACHE_BASE_URL: str | None = config("CACHE_URL", default="/media")
