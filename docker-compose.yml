@@ -11,8 +11,9 @@ services:
     ports:
       - ${APP_HOST_IP:-172.17.0.1}:${APP_HOST_PORT:-8000}:8000
     volumes:
-      - ${GAN_FORECASTS_DIR:-./data/cgan}:${APP_DATA_DIR:-/code/app/data}/cgan-forecast}
-      - ${IFS_FORECASTS_DIR:-./data/cgan}:${APP_DATA_DIR:-/code/app/data}/open-ifs}
+      - ${GAN_FORECASTS_DIR:-./data/cgan}:${APP_DATA_DIR:-/code/data}/cgan-forecast
+      - ${IFS_FORECASTS_DIR:-./data/cgan}:${APP_DATA_DIR:-/code/data}/open-ifs
+      - ${API_CACHE_DIR:-./data/cache}:${CACHE_DIR:-/code/cache}
     depends_on:
       - redis
 
