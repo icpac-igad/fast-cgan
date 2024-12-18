@@ -107,7 +107,7 @@ class EnvironmentOption(Enum):
 
 
 class EnvironmentSettings(BaseSettings):
-    ENVIRONMENT: EnvironmentOption = config("ENVIRONMENT", default="local")
+    ENVIRONMENT: EnvironmentOption = config("ENVIRONMENT", default="production")
 
 
 class Settings(
