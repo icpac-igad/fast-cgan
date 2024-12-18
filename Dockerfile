@@ -1,6 +1,6 @@
 # --------- requirements ---------
-
-FROM python:3.13 AS requirements-stage
+ARG PYTHON_VERSION=3.13
+FROM python:${PYTHON_VERSION}-slim AS builder
 
 WORKDIR /tmp
 
@@ -12,16 +12,29 @@ RUN poetry export -f requirements.txt --output requirements.txt --without-hashes
 
 
 # --------- final image build ---------
-FROM python:3.13 AS runner
+ARG PYTHON_VERSION=3.13
+FROM python:${PYTHON_VERSION}-slim AS runner
 
-RUN apt-get update -y && apt-get install libeccodes-dev -y --no-install-recommends
+ARG WORK_HOME=/opt/app
+ARG USER_NAME=cgan
+ARG USER_ID=1000
+ARG GROUP_ID=1000
 
-WORKDIR /code
+RUN apt-get update -y && \
+    apt-get install libeccodes-dev git -y --no-install-recommends && \
+    mkdir -p ${WORK_HOME}/.local/bin
 
-COPY --from=requirements-stage /tmp/requirements.txt /code/requirements.txt
+RUN groupadd --gid ${GROUP_ID} ${USER_NAME} && \
+    useradd --home-dir ${WORK_HOME} --uid ${USER_ID} --gid ${GROUP_ID} ${USER_NAME} && \
+    chown -Rf ${USER_NAME}:${USER_NAME} ${WORK_HOME}
 
-RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
+USER ${USER_NAME}
+WORKDIR ${WORK_HOME}
 
-COPY ./fastcgan /code/fastcgan
+COPY --from=builder /tmp/requirements.txt ${WORK_HOME}/requirements.txt
+ENV PATH=${WORK_HOME}/.local/bin:${PATH}
+RUN pip install --no-cache-dir --upgrade -r ${WORK_HOME}/requirements.txt
+
+COPY --chown=${USER_ID}:root ./fastcgan  ${WORK_HOME}/fastcgan
 
 CMD ["uvicorn", "fastcgan.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

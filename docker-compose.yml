@@ -1,4 +1,12 @@
 services:
+  redis:
+    image: redis:alpine
+    container_name: cgan-redis
+    volumes:
+      - ./data/redis:/data
+    ports:
+      - ${REDIS_CACHE_HOST:-172.17.0.1}:${REDIS_CACHE_PORT:-6379}:6379
+
   web:
     image: icpac/fast-cgan-web
     container_name: cgan-web
@@ -17,10 +25,24 @@ services:
     depends_on:
       - redis
 
-  redis:
-    image: redis:alpine
-    container_name: cgan-redis
+  jobs:
+    image: ${JOBS_IMAGE_NAME:-icpac/sewaa-data-pipeline}
+    container_name: ${JOBS_CNTR_NAME:-data-pipelines}
+    build:
+      context: .
+      dockerfile: ${JOBS_DOCKERFILE:-jobs.Dockerfile}
+    restart: ${RESTART_POLICY:-always}
+    command: ${JOBS_CMD:-python fastcgan/jobs/manager.py}
+    environment:
+      - DATA_STORE_DIR=${DATA_STORE_DIR:-/opt/store}
+      - IFS_SERVER_HOST=${IFS_SERVER_HOST:-domain.example}
+      - IFS_SERVER_USER=${IFS_SERVER_USER:-username}
+      - IFS_PRIVATE_KEY=${IFS_PRIVATE_KEY:-/srv/ssl/private.key}
     volumes:
-      - ./data/redis:/data
-    ports:
-      - ${REDIS_CACHE_HOST:-172.17.0.1}:${REDIS_CACHE_PORT:-6379}:6379
+      - ${CGAN_DATA_STORE:-./data/store}:${DATA_STORE_DIR:-/opt/store}
+      - ${CGAN_LOGS_DIR:-./data/logs}:${APP_LOGS_DIR:-/opt/logs}
+      - ${CGAN_MAIN_CONFIG:-./data/configs/main.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/confg.yaml:ro
+      - ${CGAN_DATA_PATHS_CONFIG:-./data/configs/data_paths.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/data_paths.yaml:ro
+      - ${CGAN_FORECAST_CONFIG:-./data/configs/forecast.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/forecast.yaml:ro
+      - ${CGAN_LOCAL_CONFIG:-./data/configs/local.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/local_config.yaml:ro
+      - ${IFS_SERVER_KEY:-./data/private/id_rsa.key}:${IFS_PRIVATE_KEY:-/srv/ssl/private.key}:ro

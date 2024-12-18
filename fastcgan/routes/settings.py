@@ -3,8 +3,8 @@ from typing import Literal
 from fastapi import APIRouter
 from show_forecasts.constants import COLOR_SCHEMES, COUNTRY_NAMES
 
+from fastcgan.jobs.utils import get_forecast_data_dates, get_locations_data_for_region
 from fastcgan.models import settings
-from fastcgan.tools.utils import get_forecast_data_dates, get_locations_data_for_region
 
 router = APIRouter()
 
