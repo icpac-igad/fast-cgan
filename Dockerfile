@@ -4,7 +4,7 @@ FROM python:${PYTHON_VERSION}-slim AS builder
 
 WORKDIR /tmp
 
-RUN pip install poetry
+RUN pip install poetry poetry-plugin-export
 
 COPY ./pyproject.toml ./poetry.lock* ./README.md /tmp/
 

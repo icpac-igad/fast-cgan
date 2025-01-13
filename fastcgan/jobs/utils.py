@@ -41,14 +41,14 @@ def get_relevant_forecast_steps(start: int | None = 30, final: int | None = 54, 
 
 
 def get_data_store_path(
-    source: Literal["cgan-forecast", "cgan-ifs", "open-ifs"],
+    source: Literal["cgan-forecast", "cgan-ifs", "open-ifs", "jobs"],
     mask_region: str | None = None,
 ) -> Path:
-    data_dir_path = (
-        Path(settings.ASSETS_DIR_MAP[source])
-        if mask_region is None
-        else Path(settings.ASSETS_DIR_MAP[source]) / mask_region
-    )
+    if source == "jobs":
+        data_dir_path = Path(settings.ASSETS_DIR_MAP["jobs"])
+    else:
+        base_dir = Path(settings.ASSETS_DIR_MAP["forecasts"]) / source
+        data_dir_path = base_dir if mask_region is None else base_dir / mask_region
 
     # create directory tree
     if not data_dir_path.exists():
@@ -226,7 +226,7 @@ def set_data_sycn_status(source: str | None = "ecmwf", status: int | None = 1):
 
 def get_data_sycn_status(source: str | None = "ecmwf") -> int:
     file_name = "post-processed-ifs.log" if source == "cgan" else "ecmwf-open-ifs.log"
-    status_file = Path(os.getenv("LOGS_DIR", "./")) / file_name
+    status_file = Path(os.getenv("LOGS_DIR", "./logs")) / file_name
 
     if not status_file.exists():
         # initialize with not-active status

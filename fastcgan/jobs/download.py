@@ -5,11 +5,13 @@ from datetime import datetime, timedelta
 from multiprocessing import cpu_count
 from os import getenv
 from pathlib import Path
+from time import sleep
 
 import cfgrib
 import xarray as xr
 from loguru import logger
-from show_forecasts.constants import COUNTRY_NAMES, OPEN_IFS_DATA_VARIABLES
+from show_forecasts.constants import COUNTRY_NAMES, DATA_PARAMS
+from show_forecasts.data_utils import get_region_extent
 
 from fastcgan.jobs.data_sync import run_ecmwf_ifs_sync, run_sftp_rsync
 from fastcgan.jobs.utils import (
@@ -19,7 +21,6 @@ from fastcgan.jobs.utils import (
     get_forecast_data_dates,
     get_forecast_data_files,
     get_possible_forecast_dates,
-    get_region_extent,
     migrate_files,
     save_to_new_filesystem_structure,
     set_data_sycn_status,
@@ -45,7 +46,7 @@ def read_dataset(file_path: str | Path, mask_area: str | None = COUNTRY_NAMES[0]
             logger.error(f"failed to read dataset {file_path} with error {err}")
     try:
         return slice_dataset_by_bbox(
-            standardize_dataset(ds[OPEN_IFS_DATA_VARIABLES]),
+            standardize_dataset(ds[list(DATA_PARAMS.keys())]),
             get_region_extent(shape_name=mask_area),
         )
     except Exception as err:
@@ -60,6 +61,7 @@ def post_process_ecmwf_grib2_dataset(
     force_process: bool | None = False,
     mask_region: str | None = COUNTRY_NAMES[0],
     save_for_countries: bool | None = True,
+    archive_grib2: bool | None = False,
 ) -> None:
     logger.info(f"executing post-processing task for {grib2_file_name}")
     data_date = datetime.strptime(grib2_file_name.split("-")[0], "%Y%m%d%H%M%S")
@@ -111,23 +113,48 @@ def post_process_ecmwf_grib2_dataset(
                                 f"failed to save {source} open ifs dataset slice for {mask_region} with error {error}"
                             )
                 # remove grib2 file from disk
-                archive_dir = get_data_store_path(source="jobs") / "grib2"
-                logger.info(f"archiving {grib2_file_name} into {archive_dir}")
+                if not archive_grib2:
+                    logger.info(
+                        f"removing {grib2_file_name} from disk. Pass archive_grib2=True"
+                        + "to archive the file on local storage disk."
+                    )
+                    for _ in range(10):
+                        try:
+                            grib2_file.unlink()
+                        except Exception:
+                            sleep(5)
+                            pass
+                        else:
+                            break
+                    if grib2_file.exists():
+                        logger.error(f"failed to delete grib2 file {grib2_file}")
 
-                if not archive_dir.exists():
-                    archive_dir.mkdir(parents=True)
+                else:
+                    archive_dir = get_data_store_path(source="jobs") / "grib2"
+                    logger.info(f"archiving {grib2_file_name} into {archive_dir}")
 
-                try:
-                    grib2_file.replace(target=archive_dir / grib2_file_name)
-                except Exception as err:
-                    logger.error(f"failed to archive {grib2_file_name} to {archive_dir} with error {err}")
+                    if not archive_dir.exists():
+                        archive_dir.mkdir(parents=True)
+
+                    try:
+                        grib2_file.replace(target=archive_dir / grib2_file_name)
+                    except Exception as err:
+                        logger.error(f"failed to archive {grib2_file_name} to {archive_dir} with error {err}")
+
                 # remove idx files from the disk
                 idx_files = [idxf for idxf in downloads_path.iterdir() if idxf.name.endswith(".idx")]
+                logger.info(f"cleaning up grib2 index files {' -> '.join(idx_files)}")
                 for idx_file in idx_files:
-                    try:
-                        idx_file.unlink()
-                    except Exception as err:
-                        logger.error(f"failed to delete grib2 index file {idx_file.name} with error {err}")
+                    for _ in range(10):
+                        try:
+                            idx_file.unlink()
+                        except Exception:
+                            sleep(5)
+                            pass
+                        else:
+                            break
+                    if idx_file.exists():
+                        logger.error(f"failed to delete grib2 index file {idx_file}")
 
 
 def post_process_downloaded_ecmwf_forecasts(source: str | None = "ecmwf") -> None:
@@ -144,10 +171,17 @@ def syncronize_open_ifs_forecast_data(
     start_step: int | None = 30,
     final_step: int | None = 54,
 ) -> None:
-    logger.info(f"recived IFS open forecast data syncronization job at {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    dt_fx = "" if date_str is None else f"for {date_str}"
+    logger.info(
+        f"recived IFS open forecast data syncronization job at {datetime.now().strftime('%Y-%m-%d %H:%M')} "
+        + f"{dt_fx} with time steps {start_step} to {final_step} and {dateback} days back"
+    )
     # proceed only if there is no active data syncronization job
     if not get_data_sycn_status():
-        logger.info(f"starting IFS open forecast data syncronization at {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+        logger.info(
+            f"starting IFS open forecast data syncronization at {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+            + f"{dt_fx} with time steps {start_step} to {final_step} and {dateback} days back"
+        )
         # generate down download parameters
         data_dates = get_possible_forecast_dates(data_date=date_str, dateback=dateback)
 

@@ -19,7 +19,7 @@ class AppSettings(BaseSettings):
     APP_VERSION: str | None = config("APP_VERSION", default=None)
     APP_BASE_URL: str | None = config("BASE_URL", default="http://127.0.0.1:8000")
     APP_SUBPATH: str | None = config("SUB_PATH", default="")
-    APP_DUMPS_DIR: str | None = config("DUMPS_DIR", default=os.path.join(base_dir, "dumps"))
+    APP_DUMPS_DIR: str | None = os.path.expandvars(config("DUMPS_DIR", default=os.path.join(base_dir, "dumps")))
     ALLOWED_ORIGINS: str | None = config("ALLOWED_ORIGINS", default="https://cgan.icpac.net,http://localhost:5173")
     LICENSE_NAME: str | None = config("LICENSE", default=None)
     CONTACT_NAME: str | None = config("CONTACT_NAME", default=None)
@@ -28,20 +28,18 @@ class AppSettings(BaseSettings):
 
 
 class AssetPathSettings(BaseSettings):
-    STATIC_ASSETS_DIR: str | None = config("STATIC_DIR", default=os.path.join(base_dir, "static"))
-    CACHE_FILES_DIR: str | None = config("CACHE_DIR", default=os.path.join(base_dir, "cache"))
-    APP_DATA_DIR: str | None = config("APP_DATA_DIR", default=os.path.join(base_dir, "./data"))
-    IFS_DATA_DIR: str | None = config("IFS_DATA_DIR", default=os.path.join(APP_DATA_DIR, "open-ifs"))
-    GAN_DATA_DIR: str | None = config("GAN_DATA_DIR", default=os.path.join(APP_DATA_DIR, "cgan-forecast"))
+    STATIC_ASSETS_DIR: str | None = os.path.expandvars(config("STATIC_DIR", default=os.path.join(base_dir, "static")))
+    CACHE_FILES_DIR: str | None = os.path.expandvars(config("CACHE_DIR", default=os.path.join(base_dir, "cache")))
+    APP_DATA_DIR: str | None = os.path.expandvars(config("APP_DATA_DIR", default=os.path.join(base_dir, "./data")))
+    JOBS_DATA_DIR: str | None = os.path.expandvars(config("JOBS_DATA_DIR", default=os.path.join(base_dir, "./jobs")))
     ASSETS_DIR_MAP: dict[str, str] = {
         "static": STATIC_ASSETS_DIR,
         "cache": CACHE_FILES_DIR,
+        "jobs": JOBS_DATA_DIR,
         "forecasts": APP_DATA_DIR,
-        "cgan-forecast": GAN_DATA_DIR,
-        "open-ifs": IFS_DATA_DIR,
     }
-    STATIC_BASE_URL: str | None = config("STATIC_URL", default="/static")
-    CACHE_BASE_URL: str | None = config("CACHE_URL", default="/media")
+    STATIC_BASE_URL: str | None = os.path.expandvars(config("STATIC_URL", default="/static"))
+    CACHE_BASE_URL: str | None = os.path.expandvars(config("CACHE_URL", default="/media"))
 
 
 class CryptSettings(BaseSettings):
@@ -59,8 +57,13 @@ class PostgresSettings(BaseSettings):
     POSTGRES_DB: str = config("POSTGRES_DB", default="postgres")
     POSTGRES_SYNC_PREFIX: str = config("POSTGRES_SYNC_PREFIX", default="postgresql://")
     POSTGRES_ASYNC_PREFIX: str = config("POSTGRES_ASYNC_PREFIX", default="postgresql+asyncpg://")
-    POSTGRES_URI: str = f"{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_SERVER}:{POSTGRES_PORT}/{POSTGRES_DB}"
-    POSTGRES_URL: str | None = config("POSTGRES_URL", default=None)
+    POSTGRES_URI: str = os.path.expandvars(
+        config(
+            "POSTGRES_URI",
+            default=f"{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_SERVER}:{POSTGRES_PORT}/{POSTGRES_DB}",
+        )
+    )
+    POSTGRES_URL: str | None = os.path.expandvars(config("POSTGRES_URL", default=None))
 
 
 class FirstUserSettings(BaseSettings):
