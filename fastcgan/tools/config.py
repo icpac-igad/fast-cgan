@@ -30,13 +30,15 @@ class AppSettings(BaseSettings):
 class AssetPathSettings(BaseSettings):
     STATIC_ASSETS_DIR: str | None = os.path.expandvars(config("STATIC_DIR", default=os.path.join(base_dir, "static")))
     CACHE_FILES_DIR: str | None = os.path.expandvars(config("CACHE_DIR", default=os.path.join(base_dir, "cache")))
-    APP_DATA_DIR: str | None = os.path.expandvars(config("APP_DATA_DIR", default=os.path.join(base_dir, "./data")))
+    FORECASTS_DATA_DIR: str | None = os.path.expandvars(
+        config("FORECASTS_DATA_DIR", default=os.path.join(base_dir, "./data"))
+    )
     JOBS_DATA_DIR: str | None = os.path.expandvars(config("JOBS_DATA_DIR", default=os.path.join(base_dir, "./jobs")))
     ASSETS_DIR_MAP: dict[str, str] = {
         "static": STATIC_ASSETS_DIR,
         "cache": CACHE_FILES_DIR,
         "jobs": JOBS_DATA_DIR,
-        "forecasts": APP_DATA_DIR,
+        "forecasts": FORECASTS_DATA_DIR,
     }
     STATIC_BASE_URL: str | None = os.path.expandvars(config("STATIC_URL", default="/static"))
     CACHE_BASE_URL: str | None = os.path.expandvars(config("CACHE_URL", default="/media"))
@@ -63,7 +65,6 @@ class PostgresSettings(BaseSettings):
             default=f"{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_SERVER}:{POSTGRES_PORT}/{POSTGRES_DB}",
         )
     )
-    POSTGRES_URL: str | None = os.path.expandvars(config("POSTGRES_URL", default=None))
 
 
 class FirstUserSettings(BaseSettings):

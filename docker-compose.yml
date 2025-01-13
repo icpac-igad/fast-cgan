@@ -19,9 +19,9 @@ services:
     ports:
       - ${APP_HOST_IP:-172.17.0.1}:${APP_HOST_PORT:-8000}:8000
     volumes:
-      - ${GAN_FORECASTS_DIR:-./data/cgan}:${APP_DATA_DIR:-/code/data}/cgan-forecast
-      - ${IFS_FORECASTS_DIR:-./data/open-ifs}:${APP_DATA_DIR:-/code/data}/open-ifs
-      - ${GBMC_FORECASTS_DIR:-./data/open-ifs}:${APP_DATA_DIR:-/code/data}/cgan-ifs
+      - ${FORECASTS_DATA_DIR:-./data/forecasts}:${APP_FORECASTS_DATA_DIR:-/opt/cgan/forecasts}
+      - ${JOBS_DATA_DIR:-./data/jobs}:${APP_JOBS_DATA_DIR:-/opt/cgan/jobs}
+      - ${CGAN_LOGS_DIR:-./data/logs}:${APP_LOGS_DIR:-/opt/app/logs}
       - ${API_CACHE_DIR:-./data/cache}:${CACHE_DIR:-/code/cache}
     depends_on:
       - redis
@@ -35,13 +35,15 @@ services:
     restart: ${RESTART_POLICY:-always}
     command: ${JOBS_CMD:-python fastcgan/jobs/manager.py}
     environment:
-      - DATA_STORE_DIR=${DATA_STORE_DIR:-/opt/store}
+      - JOBS_DATA_DIR=${APP_JOBS_DATA_DIR:-/opt/jobs}
+      - FORECASTS_DATA_DIR=${APP_FORECASTS_DATA_DIR:-/opt/forecasts}
       - IFS_SERVER_HOST=${IFS_SERVER_HOST:-domain.example}
       - IFS_SERVER_USER=${IFS_SERVER_USER:-username}
       - IFS_PRIVATE_KEY=${IFS_PRIVATE_KEY:-/srv/ssl/private.key}
     volumes:
-      - ${CGAN_DATA_STORE:-./data/store}:${DATA_STORE_DIR:-/opt/store}
-      - ${CGAN_LOGS_DIR:-./data/logs}:${APP_LOGS_DIR:-/opt/logs}
+      - ${FORECASTS_DATA_DIR:-./data/forecasts}:${APP_FORECASTS_DATA_DIR:-/opt/cgan/forecasts}
+      - ${JOBS_DATA_DIR:-./data/jobs}:${APP_JOBS_DATA_DIR:-/opt/cgan/jobs}
+      - ${CGAN_LOGS_DIR:-./data/logs}:${APP_LOGS_DIR:-/opt/cgan/logs}
       - ${CGAN_MAIN_CONFIG:-./data/configs/main.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/confg.yaml:ro
       - ${CGAN_DATA_PATHS_CONFIG:-./data/configs/data_paths.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/data_paths.yaml:ro
       - ${CGAN_FORECAST_CONFIG:-./data/configs/forecast.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/forecast.yaml:ro
