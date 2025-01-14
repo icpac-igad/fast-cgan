@@ -25,9 +25,9 @@ services:
       - REDIS_RATE_LIMIT_PORT
       - USE_UI_FS=${USE_UI_FS:-True}
       - MASK_REGION=${MASK_REGION:-East Africa}
-      - BASE_URL=${APP_BASE_URL:-http://127.0.0.1:8000}
-      - APP_VERSION=${API_VERSION:-0.1}
-      - SUB_PATH=${API_SUB_PATH:-}
+      - BASE_URL=${BASE_URL:-http://127.0.0.1:8000}
+      - APP_VERSION=${APP_VERSION:-0.1}
+      - SUB_PATH=${SUB_PATH:-}
       - FORECASTS_DATA_DIR=${APP_FORECASTS_DATA_DIR:-/opt/cgan/forecasts}
       - CACHE_DIR=${APP_CACHE_DIR:-/code/cache}
       - LOGS_DIR=${APP_LOGS_DIR:-/opt/app/logs}
