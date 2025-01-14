@@ -14,15 +14,30 @@ services:
       context: .
       dockerfile: Dockerfile
     command: gunicorn fastcgan.main:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
-    env_file:
-      - ./.env
+    environment:
+      - SECRET_KEY
+      - POSTGRES_URI
+      - REDIS_CACHE_HOST
+      - REDIS_CACHE_PORT
+      - REDIS_QUEUE_HOST
+      - REDIS_QUEUE_PORT
+      - REDIS_RATE_LIMIT_HOST
+      - REDIS_RATE_LIMIT_PORT
+      - USE_UI_FS=${USE_UI_FS:-True}
+      - MASK_REGION=${MASK_REGION:-East Africa}
+      - BASE_URL=${APP_BASE_URL:-http://127.0.0.1:8000}
+      - APP_VERSION=${API_VERSION:-0.1}
+      - SUB_PATH=${API_SUB_PATH:-}
+      - FORECASTS_DATA_DIR=${APP_FORECASTS_DATA_DIR:-/opt/cgan/forecasts}
+      - CACHE_DIR=${APP_CACHE_DIR:-/code/cache}
+      - LOGS_DIR=${APP_LOGS_DIR:-/opt/app/logs}
+      - ENVIRONMENT=${ENVIRONMENT:-production}
     ports:
       - ${APP_HOST_IP:-172.17.0.1}:${APP_HOST_PORT:-8000}:8000
     volumes:
       - ${FORECASTS_DATA_DIR:-./data/forecasts}:${APP_FORECASTS_DATA_DIR:-/opt/cgan/forecasts}
-      - ${JOBS_DATA_DIR:-./data/jobs}:${APP_JOBS_DATA_DIR:-/opt/cgan/jobs}
-      - ${CGAN_LOGS_DIR:-./data/logs}:${APP_LOGS_DIR:-/opt/app/logs}
-      - ${API_CACHE_DIR:-./data/cache}:${CACHE_DIR:-/code/cache}
+      - ${LOGS_DIR:-./data/logs}:${APP_LOGS_DIR:-/opt/app/logs}
+      - ${CACHE_DIR:-./data/cache}:${APP_CACHE_DIR:-/code/cache}
     depends_on:
       - redis
 
@@ -35,6 +50,7 @@ services:
     restart: ${RESTART_POLICY:-always}
     command: ${JOBS_CMD:-python fastcgan/jobs/manager.py}
     environment:
+      - SECRET_KEY
       - JOBS_DATA_DIR=${APP_JOBS_DATA_DIR:-/opt/jobs}
       - FORECASTS_DATA_DIR=${APP_FORECASTS_DATA_DIR:-/opt/forecasts}
       - IFS_SERVER_HOST=${IFS_SERVER_HOST:-domain.example}

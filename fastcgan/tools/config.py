@@ -14,17 +14,18 @@ config = Config(env_path)
 
 
 class AppSettings(BaseSettings):
-    APP_NAME: str = config("APP_NAME", default="FastAPI app")
-    APP_DESCRIPTION: str | None = config("APP_DESCRIPTION", default=None)
-    APP_VERSION: str | None = config("APP_VERSION", default=None)
+    APP_NAME: str = config("APP_NAME", default="cGAN API Gateway")
+    APP_DESCRIPTION: str | None = config("APP_DESCRIPTION", default="cGAN Forecasts API")
+    APP_VERSION: str | None = config("APP_VERSION", default="0.1")
     APP_BASE_URL: str | None = config("BASE_URL", default="http://127.0.0.1:8000")
     APP_SUBPATH: str | None = config("SUB_PATH", default="")
     APP_DUMPS_DIR: str | None = os.path.expandvars(config("DUMPS_DIR", default=os.path.join(base_dir, "dumps")))
     ALLOWED_ORIGINS: str | None = config("ALLOWED_ORIGINS", default="https://cgan.icpac.net,http://localhost:5173")
-    LICENSE_NAME: str | None = config("LICENSE", default=None)
-    CONTACT_NAME: str | None = config("CONTACT_NAME", default=None)
-    CONTACT_EMAIL: str | None = config("CONTACT_EMAIL", default=None)
-    MASK_REGION: str | None = config("MASK_REGION", default=None)
+    LICENSE_NAME: str | None = config("LICENSE", default="CC BY 4.0")
+    CONTACT_NAME: str | None = config("CONTACT_NAME", default="Developer")
+    CONTACT_EMAIL: str | None = config("CONTACT_EMAIL", default="developer@icpac.net")
+    MASK_REGION: str | None = config("MASK_REGION", default="East Africa")
+    USE_UI_FS: bool | None = config("USE_UI_FS", default=True)
 
 
 class AssetPathSettings(BaseSettings):
@@ -65,16 +66,6 @@ class PostgresSettings(BaseSettings):
             default=f"{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_SERVER}:{POSTGRES_PORT}/{POSTGRES_DB}",
         )
     )
-
-
-class FirstUserSettings(BaseSettings):
-    ADMIN_NAME: str = config("ADMIN_NAME", default="admin")
-    ADMIN_EMAIL: str = config("ADMIN_EMAIL", default="admin@admin.com")
-    ADMIN_USERNAME: str = config("ADMIN_USERNAME", default="admin")
-    ADMIN_PASSWORD: str = config("ADMIN_PASSWORD", default="!Ch4ng3Th1sP4ssW0rd!")
-
-
-class TestSettings(BaseSettings): ...
 
 
 class RedisCacheSettings(BaseSettings):
@@ -119,8 +110,6 @@ class Settings(
     AssetPathSettings,
     PostgresSettings,
     CryptSettings,
-    FirstUserSettings,
-    TestSettings,
     RedisCacheSettings,
     ClientSideCacheSettings,
     RedisQueueSettings,
