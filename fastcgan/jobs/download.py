@@ -286,7 +286,7 @@ def syncronize_post_processed_ifs_data(mask_region: str | None = COUNTRY_NAMES[0
         set_data_sycn_status(source="cgan", status=0)
 
 
-def compress_open_ifs_data():
+def compress_downloaded_open_ifs_data():
     data_files = get_forecast_data_files(source="jobs/downloads")
     for data_file in data_files:
         post_process_ecmwf_grib2_dataset(grib2_file_name=data_file, force_process=True)
@@ -349,6 +349,6 @@ if __name__ == "__main__":
             for source in ["ecmwf", "gbmc", "cgan"]:
                 migrate_files(source)
         case "compress":
-            compress_open_ifs_data()
+            compress_downloaded_open_ifs_data()
         case _:
             logger.error(f"handler for {args.command} not implemented!")

@@ -1,5 +1,5 @@
 # --------- requirements ---------
-ARG PYTHON_VERSION=3.13
+ARG PYTHON_VERSION=3.11
 FROM python:${PYTHON_VERSION}-slim AS builder
 
 WORKDIR /tmp
@@ -12,7 +12,7 @@ RUN poetry export -f requirements.txt --output requirements.txt --without-hashes
 
 
 # --------- final image build ---------
-ARG PYTHON_VERSION=3.13
+ARG PYTHON_VERSION=3.11
 FROM python:${PYTHON_VERSION}-slim AS runner
 
 ARG WORK_HOME=/opt/app

@@ -11,7 +11,7 @@ RUN apt-get update -y && \
 
 COPY ./pyproject.toml ./poetry.lock ./README.md /tmp/
 
-RUN sed -i -e 's/>=3.10,<=3.13/>=3.10,<3.12/g' pyproject.toml && \
+RUN sed -i -e 's/>=3.10,<=3.13/>=3.10,<3.12/g' pyproject.toml && poetry lock && \
     poetry add git+${GAN_REPO}@${GAN_BRANCH}
 
 ARG PYTHON_VERSION=3.10
