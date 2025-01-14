@@ -51,15 +51,16 @@ services:
     command: ${JOBS_CMD:-python fastcgan/jobs/manager.py}
     environment:
       - SECRET_KEY
-      - JOBS_DATA_DIR=${APP_JOBS_DATA_DIR:-/opt/jobs}
-      - FORECASTS_DATA_DIR=${APP_FORECASTS_DATA_DIR:-/opt/forecasts}
+      - JOBS_DATA_DIR=${APP_JOBS_DATA_DIR:-/opt/cgan/jobs}
+      - FORECASTS_DATA_DIR=${APP_FORECASTS_DATA_DIR:-/opt/cgan/forecasts}
+      - LOGS_DIR=${APP_LOGS_DIR:-/opt/cgan/logs}
       - IFS_SERVER_HOST=${IFS_SERVER_HOST:-domain.example}
       - IFS_SERVER_USER=${IFS_SERVER_USER:-username}
       - IFS_PRIVATE_KEY=${IFS_PRIVATE_KEY:-/srv/ssl/private.key}
     volumes:
       - ${FORECASTS_DATA_DIR:-./data/forecasts}:${APP_FORECASTS_DATA_DIR:-/opt/cgan/forecasts}
       - ${JOBS_DATA_DIR:-./data/jobs}:${APP_JOBS_DATA_DIR:-/opt/cgan/jobs}
-      - ${CGAN_LOGS_DIR:-./data/logs}:${APP_LOGS_DIR:-/opt/cgan/logs}
+      - ${LOGS_DIR:-./data/logs}:${APP_LOGS_DIR:-/opt/cgan/logs}
       - ${CGAN_MAIN_CONFIG:-./data/configs/main.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/confg.yaml:ro
       - ${CGAN_DATA_PATHS_CONFIG:-./data/configs/data_paths.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/data_paths.yaml:ro
       - ${CGAN_FORECAST_CONFIG:-./data/configs/forecast.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/forecast.yaml:ro

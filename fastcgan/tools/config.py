@@ -14,8 +14,11 @@ config = Config(env_path)
 
 
 class AppSettings(BaseSettings):
-    APP_NAME: str = config("APP_NAME", default="cGAN API Gateway")
-    APP_DESCRIPTION: str | None = config("APP_DESCRIPTION", default="cGAN Forecasts API")
+    APP_NAME: str = config("APP_NAME", default="Weather and Climate Forecast Systems API")
+    APP_DESCRIPTION: str | None = config(
+        "APP_DESCRIPTION",
+        default="API gateway for the Strengthening Early Warning Systems for Anticipatory Action (SEWAA) Project",
+    )
     APP_VERSION: str | None = config("APP_VERSION", default="0.1")
     APP_BASE_URL: str | None = config("BASE_URL", default="http://127.0.0.1:8000")
     APP_SUBPATH: str | None = config("SUB_PATH", default="")
