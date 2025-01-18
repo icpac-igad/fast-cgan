@@ -145,18 +145,19 @@ def post_process_ecmwf_grib2_dataset(
 
                 # remove idx files from the disk
                 idx_files = [idxf for idxf in downloads_path.iterdir() if idxf.name.endswith(".idx")]
-                logger.info(f"cleaning up grib2 index files {' -> '.join(idx_files)}")
-                for idx_file in idx_files:
-                    for _ in range(10):
-                        try:
-                            idx_file.unlink()
-                        except Exception:
-                            sleep(5)
-                            pass
-                        else:
-                            break
-                    if idx_file.exists():
-                        logger.error(f"failed to delete grib2 index file {idx_file}")
+                if len(idx_files):
+                    logger.info(f"cleaning up grib2 index files {' -> '.join(idx_files)}")
+                    for idx_file in idx_files:
+                        for _ in range(10):
+                            try:
+                                idx_file.unlink()
+                            except Exception:
+                                sleep(5)
+                                pass
+                            else:
+                                break
+                        if idx_file.exists():
+                            logger.error(f"failed to delete grib2 index file {idx_file}")
 
 
 def post_process_downloaded_ecmwf_forecasts(source: str | None = "open-ifs") -> None:
@@ -213,17 +214,23 @@ def syncronize_open_ifs_forecast_data(
 def generate_cgan_forecasts(mask_region: str | None = COUNTRY_NAMES[0]):
     ifs_dates = get_forecast_data_dates(mask_region=mask_region, source="cgan-ifs")
     gan_dates = get_forecast_data_dates(mask_region=mask_region, source="cgan-forecast")
-    for ifs_date in ifs_dates:
+    for ifs_date in ifs_dates[:2]:
         if ifs_date not in gan_dates:
             logger.info(f"generating cGAN forecast for {ifs_date}")
             # generate forecast for date
             data_date = datetime.strptime(ifs_date, "%b %d, %Y")
-            ifs_filename = f"IFS_{data_date.strftime('%Y%m%d')}_00Z.nc"
+            gbmc_filename = get_dataset_file_path(
+                source="cgan-ifs",
+                data_date=data_date,
+                file_name=f"{data_date.strftime('%Y%m%d')}_00Z.nc",
+                mask_region=mask_region,
+            )
+            store_path = get_data_store_path(source="cgan-ifs", mask_region=mask_region)
             try:
                 subprocess.call(
                     shell=True,
                     cwd=f'{getenv("WORK_HOME","/opt/cgan")}/ensemble-cgan/dsrnngan',
-                    args=f"python test_forecast.py -f {ifs_filename}",
+                    args=f"python test_forecast.py -f {str(gbmc_filename).replace(str(store_path), '')}",
                 )
             except Exception as error:
                 logger.error(f"failed to generate cGAN forecast for {ifs_date} with error {error}")
@@ -232,12 +239,8 @@ def generate_cgan_forecasts(mask_region: str | None = COUNTRY_NAMES[0]):
                     get_data_store_path(source="jobs") / "cgan-forecast" / f"GAN_{data_date.strftime('%Y%m%d')}.nc"
                 )
                 save_to_new_filesystem_structure(
-                    file_path=cgan_file_path, source="cgan-forecast", part_to_replace="GAN_", preserve_file=False
+                    file_path=cgan_file_path, source="cgan-forecast", part_to_replace="GAN_"
                 )
-                cgan_ifs_path = get_data_store_path(source="jobs") / "cgan-ifs" / ifs_filename
-                if cgan_ifs_path.exists():
-                    logger.debug(f"removing cGAN IFS {ifs_filename} from disk.")
-                    cgan_ifs_path.unlink()
 
 
 def post_process_downloaded_cgan_ifs(source: str | None = "cgan-ifs"):
@@ -247,7 +250,7 @@ def post_process_downloaded_cgan_ifs(source: str | None = "cgan-ifs"):
         f"starting batch post-processing tasks for {'  <---->  '.join([gbmc_file.name for gbmc_file in gbmc_files])}"
     )
     for gbmc_file in gbmc_files:
-        save_to_new_filesystem_structure(file_path=gbmc_file, source=source, part_to_replace="IFS_", preserve_file=True)
+        save_to_new_filesystem_structure(file_path=gbmc_file, source=source, part_to_replace="IFS_")
     generate_cgan_forecasts()
 
 
@@ -281,16 +284,15 @@ def syncronize_post_processed_ifs_data(mask_region: str | None = COUNTRY_NAMES[0
                     source_dir=src_dir,
                     dest_dir=str(dest_dir),
                 )
-                for data_date in data_dates
+                for data_date in data_dates[:1]
             ]
 
             for future in concurrent.futures.as_completed(results):
                 if future.result() is not None:
                     gbmc_file = future.result()
                     if gbmc_file is not None:
-                        dest_file = dest_dir / gbmc_file
                         save_to_new_filesystem_structure(
-                            file_path=dest_file, source="cgan-ifs", part_to_replace="IFS_", preserve_file=True
+                            file_path=dest_dir / gbmc_file, source="cgan-ifs", part_to_replace="IFS_"
                         )
 
         generate_cgan_forecasts()
@@ -299,7 +301,7 @@ def syncronize_post_processed_ifs_data(mask_region: str | None = COUNTRY_NAMES[0
 
 
 def compress_downloaded_open_ifs_data():
-    data_files = get_forecast_data_files(source="jobs/downloads")
+    data_files = get_forecast_data_files(source="jobs/open-ifs")
     for data_file in data_files:
         post_process_ecmwf_grib2_dataset(grib2_file_name=data_file, force_process=True)
 

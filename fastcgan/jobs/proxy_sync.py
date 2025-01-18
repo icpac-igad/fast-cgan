@@ -61,45 +61,43 @@ def retrieve_ens_counts_datasets(source: str = Literal["jurre-brishti", "mvua-ku
         forecast_dates = r.json()
         forecasts_dir = getenv("FORECAST_DIR", "./data")
         for year in reversed(forecast_dates.keys()):
-            if year != "2025":
-                for month in reversed(forecast_dates[year].keys()):
-                    for day in reversed(forecast_dates[year][month].keys()):
-                        for start_time in reversed(forecast_dates[year][month][day].keys()):
-                            for valid_time in reversed(forecast_dates[year][month][day][start_time]):
-                                month_str = str(month).rjust(2, "0")
-                                day_str = str(day).rjust(2, "0")
-                                start_time_str = str(start_time).rjust(2, "0")
-                                dwnld_link = (
-                                    f"http://megacorr.dynu.net/ICPAC/cGAN_examplePlots/data/{model_path}/{year}"
-                                    + f"/counts_{year}{month_str}{day_str}_{start_time_str}_{valid_time}h.nc"
+            for month in reversed(forecast_dates[year].keys()):
+                for day in reversed(forecast_dates[year][month].keys()):
+                    for start_time in reversed(forecast_dates[year][month][day].keys()):
+                        for valid_time in reversed(forecast_dates[year][month][day][start_time]):
+                            month_str = str(month).rjust(2, "0")
+                            day_str = str(day).rjust(2, "0")
+                            start_time_str = str(start_time).rjust(2, "0")
+                            dwnld_link = (
+                                f"http://megacorr.dynu.net/ICPAC/cGAN_examplePlots/data/{model_path}/{year}"
+                                + f"/counts_{year}{month_str}{day_str}_{start_time_str}_{valid_time}h.nc"
+                            )
+                            destination = Path(f"{forecasts_dir}/{source}/{year}/{month_str}")
+                            if not destination.exists():
+                                destination.mkdir(parents=True)
+                            logger.debug(f"trying download of {dwnld_link}")
+                            try:
+                                file_path = (
+                                    destination / f"counts_{year}{month_str}{day_str}_{start_time_str}_{valid_time}h.nc"
                                 )
-                                destination = Path(f"{forecasts_dir}/{source}/{year}/{month_str}")
-                                if not destination.exists():
-                                    destination.mkdir(parents=True)
-                                logger.debug(f"trying download of {dwnld_link}")
-                                try:
-                                    file_path = (
-                                        destination
-                                        / f"counts_{year}{month_str}{day_str}_{start_time_str}_{valid_time}h.nc"
-                                    )
-                                    with requests.get(dwnld_link, stream=True) as r:
-                                        logger.debug(f"downloading {dwnld_link} into {destination}")
+                                with requests.get(dwnld_link, stream=True) as r:
+                                    logger.debug(f"downloading {dwnld_link} into {destination}")
 
-                                        if r.status_code == 200:
-                                            with file_path.open(mode="wb") as f:
-                                                f.write(r.content)
-                                            logger.info(
-                                                f"Finished downloading {dwnld_link}.\t"
-                                                + f"Data stream was saved in {file_path.name}"
-                                            )
-                                        else:
-                                            logger.error(
-                                                f"failed to download dataset file {dwnld_link} "
-                                                + f"with http response {r.text}"
-                                            )
+                                    if r.status_code == 200:
+                                        with file_path.open(mode="wb") as f:
+                                            f.write(r.content)
+                                        logger.info(
+                                            f"Finished downloading {dwnld_link}.\t"
+                                            + f"Data stream was saved in {file_path.name}"
+                                        )
+                                    else:
+                                        logger.error(
+                                            f"failed to download dataset file {dwnld_link} "
+                                            + f"with http response {r.text}"
+                                        )
 
-                                except Exception as err:
-                                    logger.error(f"failed to download {dwnld_link} with error {err}")
+                            except Exception as err:
+                                logger.error(f"failed to download {dwnld_link} with error {err}")
 
 
 def sync_data_source(
