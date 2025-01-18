@@ -40,7 +40,7 @@ def get_relevant_forecast_steps(start: int | None = 30, final: int | None = 54, 
 
 
 def get_data_store_path(
-    source: Literal["cgan-forecast", "cgan-ifs", "open-ifs", "jobs"],
+    source: Literal["cgan-forecast", "cgan-ifs", "open-ifs", "jobs", "jurre-brishti", "mvua-kubwa"],
     mask_region: str | None = None,
 ) -> Path:
     if source == "jobs":
@@ -82,7 +82,9 @@ def get_directory_files(data_path: Path, files: set[Path] | None = set()) -> set
     return files
 
 
-def get_forecast_data_files(mask_region: str, source: Literal["cgan-forecast", "cgan-ifs", "open-ifs"]) -> list[str]:
+def get_forecast_data_files(
+    mask_region: str, source: Literal["cgan-forecast", "cgan-ifs", "open-ifs", "jurre-brishti", "mvua-kubwa"]
+) -> list[str]:
     store_path = get_data_store_path(source=source, mask_region=mask_region)
     data_files = get_directory_files(data_path=store_path, files=set())
     return [str(dfile).split("/")[-1] for dfile in data_files]

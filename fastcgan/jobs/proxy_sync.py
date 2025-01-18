@@ -1,11 +1,11 @@
 from argparse import ArgumentParser
-from os import getenv
-from pathlib import Path
 from typing import Literal
 
 import requests
 from bs4 import BeautifulSoup
 from loguru import logger
+
+from fastcgan.jobs.utils import get_data_store_path
 
 
 def crawl_http_dataset_links(data_page: str) -> list[str]:
@@ -25,8 +25,8 @@ def crawl_http_dataset_links(data_page: str) -> list[str]:
 
 def make_dataset_path(dataset_url: str, data_source: str, trim_part: str | None = "") -> None:
     dir_tree = "/".join(dataset_url.replace(trim_part, "").split("/"))
-    forecasts_dir = getenv("FORECAST_DIR", "./data")
-    data_dir = Path(f"{forecasts_dir}/{data_source}/{dir_tree.replace('%20', ' ') if dir_tree != '/' else ''}")
+    forecasts_dir = get_data_store_path(source=data_source)
+    data_dir = forecasts_dir / f"{dir_tree.replace('%20', ' ') if dir_tree != '/' else ''}"
     if not data_dir.exists():
         data_dir.mkdir(parents=True)
 
@@ -59,7 +59,7 @@ def retrieve_ens_counts_datasets(source: str = Literal["jurre-brishti", "mvua-ku
     r = requests.get(dates_json)
     if r.status_code == 200:
         forecast_dates = r.json()
-        forecasts_dir = getenv("FORECAST_DIR", "./data")
+        data_dir = get_data_store_path(source=source)
         for year in reversed(forecast_dates.keys()):
             for month in reversed(forecast_dates[year].keys()):
                 for day in reversed(forecast_dates[year][month].keys()):
@@ -72,7 +72,7 @@ def retrieve_ens_counts_datasets(source: str = Literal["jurre-brishti", "mvua-ku
                                 f"http://megacorr.dynu.net/ICPAC/cGAN_examplePlots/data/{model_path}/{year}"
                                 + f"/counts_{year}{month_str}{day_str}_{start_time_str}_{valid_time}h.nc"
                             )
-                            destination = Path(f"{forecasts_dir}/{source}/{year}/{month_str}")
+                            destination = data_dir / year / month_str
                             if not destination.exists():
                                 destination.mkdir(parents=True)
                             logger.debug(f"trying download of {dwnld_link}")
@@ -121,9 +121,8 @@ def sync_data_source(
             for datafile_url in data_urls:
                 logger.debug(f"trying download of {datafile_url}")
                 try:
-                    forecasts_dir = getenv("FORECAST_DIR", "./data")
                     relative_path = datafile_url.replace(provider_url, "").replace(f"/{source}", "")
-                    destination = Path(f"{forecasts_dir}/{source}/{relative_path}".replace("%20", " "))
+                    destination = get_data_store_path(source=source) / f"{relative_path}".replace("%20", " ")
                     with requests.get(datafile_url, stream=True) as r:
                         logger.debug(f"downloading {datafile_url} into {destination}")
 
