@@ -3,12 +3,6 @@ from enum import Enum
 # from show_forecasts.constants import ACCUMULATION_UNITS
 
 
-class DataSourceIdentifier(Enum):
-    ecmwf = "open_ifs"
-    gbmc = "gbmc_ifs"
-    cgan = "cgan_forecast"
-
-
 class IfsDataParameter(Enum):
     tp = "Total precipitation"
     sp = "Surface pressure"

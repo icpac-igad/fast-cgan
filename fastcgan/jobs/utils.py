@@ -15,7 +15,6 @@ from show_forecasts.data_utils import get_locations_data, get_region_extent
 
 from fastcgan.tools.config import settings
 from fastcgan.tools.constants import ACCUMULATION_UNITS
-from fastcgan.tools.enums import DataSourceIdentifier
 
 
 def get_locations_data_for_region(region: str | None = None):
@@ -69,9 +68,8 @@ def get_dataset_file_path(source: str, data_date: datetime, file_name: str, mask
         store_path.mkdir(parents=True)
 
     mask_code = "" if mask_region is None else mask_region.replace(" ", "_").lower()
-    source_code = DataSourceIdentifier[source].value
 
-    return store_path / f"{mask_code}-{source_code}-{file_name}"
+    return store_path / f"{mask_code}-{source.replace('-','_')}-{file_name}"
 
 
 # recursive function that calls itself until all directories in data_path are traversed
@@ -147,7 +145,11 @@ def slice_dataset_by_bbox(ds: xr.Dataset, bbox: list[float]):
 
 
 def save_to_new_filesystem_structure(file_path: Path, source: str, part_to_replace: str | None = None) -> None:
-    ds = standardize_dataset(xr.open_dataset(file_path, decode_times=False))
+    logger.debug(f"received filesystem migration task for {source} - {file_path}")
+    try:
+        ds = standardize_dataset(xr.open_dataset(file_path, decode_times=False))
+    except Exception:
+        logger.error(f"failed to read {source} data file {file_path} with error")
     fname = file_path.name.replace(part_to_replace, "")
     data_date = datetime.strptime(
         fname.replace(".nc", "").split("-")[0].split("_")[0].replace("000000", ""),
