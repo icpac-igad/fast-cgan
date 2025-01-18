@@ -145,24 +145,23 @@ def post_process_ecmwf_grib2_dataset(
 
                 # remove idx files from the disk
                 idx_files = [idxf for idxf in downloads_path.iterdir() if idxf.name.endswith(".idx")]
-                if len(idx_files):
-                    logger.info(f"cleaning up grib2 index files {' -> '.join(idx_files)}")
-                    for idx_file in idx_files:
-                        for _ in range(10):
-                            try:
-                                idx_file.unlink()
-                            except Exception:
-                                sleep(5)
-                                pass
-                            else:
-                                break
-                        if idx_file.exists():
-                            logger.error(f"failed to delete grib2 index file {idx_file}")
+                logger.info(f"cleaning up grib2 index files {' -> '.join([idxf.name for idxf in idx_files])}")
+                for idx_file in idx_files:
+                    for _ in range(10):
+                        try:
+                            idx_file.unlink()
+                        except Exception:
+                            sleep(5)
+                            pass
+                        else:
+                            break
+                    if idx_file.exists():
+                        logger.error(f"failed to delete grib2 index file {idx_file}")
 
 
 def post_process_downloaded_ecmwf_forecasts(source: str | None = "open-ifs") -> None:
     downloads_path = get_data_store_path(source="jobs") / source
-    grib2_files = [dfile.name for dfile in downloads_path.iterdir()]
+    grib2_files = [dfile.name for dfile in downloads_path.iterdir() if dfile.name.endswith(".grib2")]
     logger.info(f"starting batch post-processing tasks for {'  <---->  '.join(grib2_files)}")
     for grib2_file in grib2_files:
         post_process_ecmwf_grib2_dataset(source=source, grib2_file_name=grib2_file, force_process=True)
@@ -230,7 +229,7 @@ def generate_cgan_forecasts(mask_region: str | None = COUNTRY_NAMES[0]):
                 subprocess.call(
                     shell=True,
                     cwd=f'{getenv("WORK_HOME","/opt/cgan")}/ensemble-cgan/dsrnngan',
-                    args=f"python test_forecast.py -f {str(gbmc_filename).replace(str(store_path), '')}",
+                    args=f"python test_forecast.py -f {str(gbmc_filename).replace(f'{store_path}/', '')}",
                 )
             except Exception as error:
                 logger.error(f"failed to generate cGAN forecast for {ifs_date} with error {error}")
