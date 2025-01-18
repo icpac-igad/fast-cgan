@@ -12,7 +12,8 @@ RUN apt-get update -y && \
 COPY ./pyproject.toml ./poetry.lock ./README.md /tmp/
 
 RUN sed -i -e 's/>=3.10,<=3.13/>=3.10,<3.12/g' pyproject.toml && poetry lock && \
-    poetry add git+${GAN_REPO}@${GAN_BRANCH}
+    poetry add git+${GAN_REPO}@${GAN_BRANCH} && \
+    git clone ${GAN_REPO} -b {GAN_BRANCH} /tmp/code
 
 ARG PYTHON_VERSION=3.10
 FROM python:${PYTHON_VERSION}-slim AS runner
@@ -39,6 +40,7 @@ USER ${USER_NAME}
 WORKDIR ${WORK_HOME}
 
 COPY --from=builder /tmp/pyproject.toml /tmp/poetry.lock /tmp/README.md ${WORK_HOME}/
+COPY --from=builder /tmp/code ${WORK_HOME}/ensemble-cgan
 COPY --chown=${USER_NAME}:root ./fastcgan ${WORK_HOME}/fastcgan
 ENV PATH=${WORK_HOME}/.local/bin:$PATH
 RUN pip install --no-cache-dir --upgrade -e .

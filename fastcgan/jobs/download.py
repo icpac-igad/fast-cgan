@@ -219,7 +219,7 @@ def generate_cgan_forecasts(mask_region: str | None = COUNTRY_NAMES[0]):
             try:
                 subprocess.call(
                     shell=True,
-                    cwd=f'{getenv("WORK_HOME","/opt/mycgan")}/ensemble-cgan/dsrnngan',
+                    cwd=f'{getenv("WORK_HOME","/opt/cgan")}/ensemble-cgan/dsrnngan',
                     args=f"python test_forecast.py -f {ifs_filename}",
                 )
             except Exception as error:
@@ -233,16 +233,20 @@ def generate_cgan_forecasts(mask_region: str | None = COUNTRY_NAMES[0]):
                     source="cgan-forecast",
                     part_to_replace="GAN_",
                 )
+                cgan_ifs_path = get_data_store_path(source="jobs") / "cgan-ifs" / ifs_filename
+                if cgan_ifs_path.exists():
+                    logger.debug(f"removing cGAN IFS {ifs_filename} from disk.")
+                    cgan_ifs_path.unlink()
 
 
 def post_process_downloaded_cgan_ifs(source: str | None = "cgan-ifs"):
     downloads_path = get_data_store_path(source="jobs") / source
-    for gbmc_file in downloads_path.iterdir():
-        save_to_new_filesystem_structure(
-            file_path=gbmc_file,
-            source=source,
-            part_to_replace="IFS_",
-        )
+    gbmc_files = list(downloads_path.iterdir())
+    logger.info(
+        f"starting batch post-processing tasks for {'  <---->  '.join([gbmc_file.name for gbmc_file in gbmc_files])}"
+    )
+    for gbmc_file in gbmc_files:
+        save_to_new_filesystem_structure(file_path=gbmc_file, source=source, part_to_replace="IFS_", preserve_file=True)
     generate_cgan_forecasts()
 
 

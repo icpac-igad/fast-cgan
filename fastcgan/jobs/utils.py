@@ -144,7 +144,9 @@ def slice_dataset_by_bbox(ds: xr.Dataset, bbox: list[float]):
         return ds
 
 
-def save_to_new_filesystem_structure(file_path: Path, source: str, part_to_replace: str | None = None) -> None:
+def save_to_new_filesystem_structure(
+    file_path: Path, source: str, part_to_replace: str | None = None, preserve_file: bool | None = False
+) -> None:
     logger.debug(f"received filesystem migration task for {source} - {file_path}")
     try:
         ds = standardize_dataset(xr.open_dataset(file_path, decode_times=False))
@@ -189,7 +191,7 @@ def save_to_new_filesystem_structure(file_path: Path, source: str, part_to_repla
                 else:
                     logger.debug(f"succeefully migrated dataset slice for {country_name}")
     if not len(errors):
-        if "IFS_" not in file_path.name:
+        if "IFS_" in file_path.name and not preserve_file:
             logger.debug(f"removing GBMC IFS file {file_path.name} after a successful migration")
             file_path.unlink(missing_ok=True)
     else:
