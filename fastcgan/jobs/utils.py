@@ -200,14 +200,14 @@ def save_to_new_filesystem_structure(file_path: Path, source: str, part_to_repla
 def migrate_files(source: str):
     store = Path(os.getenv("DATA_STORE_DIR", str(Path("./store")))).absolute()
     match source:
-        case "gbmc":
+        case "cgan-ifs":
             data_dir = store / "IFS"
             part_to_replace = "IFS_"
-        case "cgan":
+        case "cgan-forecast":
             data_dir = store / "GAN_forecasts"
             part_to_replace = "GAN_"
-        case "ecmwf":
-            data_dir = store / "interim" / "EA" / "ecmwf" / "enfo"
+        case "open-ifs":
+            data_dir = store / "interim" / "EA" / "open-ifs" / "enfo"
             part_to_replace = ""
     data_files = [fpath for fpath in data_dir.iterdir() if fpath.name.endswith(".nc")]
     logger.info(f"processing file-structure migration for {len(data_files)} {source} data files")
@@ -216,16 +216,16 @@ def migrate_files(source: str):
         save_to_new_filesystem_structure(file_path=dfile, source=source, part_to_replace=part_to_replace)
 
 
-def set_data_sycn_status(source: str | None = "ecmwf", status: int | None = 1):
-    file_name = "post-processed-ifs.log" if source == "cgan" else "ecmwf-open-ifs.log"
+def set_data_sycn_status(source: str | None = "open-ifs", status: int | None = 1):
+    file_name = "post-processed-ifs.log" if source == "cgan-forecast" else "ecmwf-open-ifs.log"
     status_file = Path(os.getenv("LOGS_DIR", "./")) / file_name
     # initialize with not-active status
     with open(status_file, "w") as sf:
         sf.write(str(status))
 
 
-def get_data_sycn_status(source: str | None = "ecmwf") -> int:
-    file_name = "post-processed-ifs.log" if source == "cgan" else "ecmwf-open-ifs.log"
+def get_data_sycn_status(source: str | None = "open-ifs") -> int:
+    file_name = "post-processed-ifs.log" if source == "cgan-forecast" else "ecmwf-open-ifs.log"
     status_file = Path(os.getenv("LOGS_DIR", "./logs")) / file_name
 
     if not status_file.exists():

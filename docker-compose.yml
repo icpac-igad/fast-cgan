@@ -8,8 +8,8 @@ services:
       - ${REDIS_CACHE_HOST:-172.17.0.1}:${REDIS_CACHE_PORT:-6379}:6379
 
   web:
-    image: icpac/fast-cgan-web
-    container_name: cgan-web
+    image: icpac/fast-cgan-api
+    container_name: cgan-api
     build:
       context: .
       dockerfile: Dockerfile

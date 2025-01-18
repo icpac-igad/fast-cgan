@@ -7,6 +7,8 @@ import schedule
 from loguru import logger
 
 from fastcgan.jobs.download import (
+    post_process_downloaded_cgan_ifs,
+    post_process_downloaded_ecmwf_forecasts,
     syncronize_open_ifs_forecast_data,
     syncronize_post_processed_ifs_data,
 )
@@ -33,8 +35,10 @@ config = {
 logger.configure(**config)
 
 logger.info("executing jobs warm-up tasks on scripts initialization!")
-set_data_sycn_status(source="cgan", status=0)
-set_data_sycn_status(source="ecmwf", status=0)
+post_process_downloaded_cgan_ifs()
+post_process_downloaded_ecmwf_forecasts()
+set_data_sycn_status(source="cgan-forecast", status=0)
+set_data_sycn_status(source="open-ifs", status=0)
 syncronize_post_processed_ifs_data()
 syncronize_open_ifs_forecast_data(dateback=1)
 

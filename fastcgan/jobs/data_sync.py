@@ -71,7 +71,7 @@ def try_data_download(
 
 def run_ecmwf_ifs_sync(
     data_date: date,
-    source: str | None = "ecmwf",
+    source: str | None = "open-ifs",
     model: str | None = "ifs",
     resolution: str | None = "0p25",
     stream: str | None = "enfo",
@@ -88,7 +88,7 @@ def run_ecmwf_ifs_sync(
     # get latest available forecast date
     latest_fdate = client.latest()
     # construct data store path
-    downloads_path = get_data_store_path(source="jobs") / "downloads"
+    downloads_path = get_data_store_path(source="jobs") / source
     # create data directory if it doesn't exist
     if not downloads_path.exists():
         downloads_path.mkdir(parents=True, exist_ok=True)
@@ -107,7 +107,7 @@ def run_ecmwf_ifs_sync(
         for request in requests:
             file_name = f"{request['date'].strftime('%Y%m%d')}000000-{request['step']}h-{stream}-ef.grib2"
             mask_file = get_dataset_file_path(
-                source="ecmwf",
+                source="open-ifs",
                 mask_region=default_mask,
                 data_date=data_date,
                 file_name=file_name.replace(".grib2", ".nc"),
