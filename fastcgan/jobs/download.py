@@ -45,8 +45,10 @@ def read_dataset(file_path: str | Path, mask_area: str | None = COUNTRY_NAMES[0]
         except Exception as err:
             logger.error(f"failed to read dataset {file_path} with error {err}")
     try:
+        data_params = [data_param for data_param in DATA_PARAMS.keys() if data_param != "wind"]
+        data_params.extend(["u10", "v10"])
         return slice_dataset_by_bbox(
-            standardize_dataset(ds[list(DATA_PARAMS.keys())]),
+            standardize_dataset(ds[data_params]),
             get_region_extent(shape_name=mask_area),
         )
     except Exception as err:
@@ -199,9 +201,10 @@ def syncronize_open_ifs_forecast_data(
             ]
             for future in concurrent.futures.as_completed(results):
                 if future.result() is not None:
-                    grib2_file = future.result()
-                    if grib2_file is not None:
-                        post_process_ecmwf_grib2_dataset(grib2_file_name=grib2_file)
+                    grib2_files = future.result()
+                    if grib2_files is not None:
+                        for grib2_file in grib2_files:
+                            post_process_ecmwf_grib2_dataset(grib2_file_name=grib2_file)
 
         # set data syncronization status
         set_data_sycn_status(source="open-ifs", status=0)
@@ -229,9 +232,7 @@ def generate_cgan_forecasts(mask_region: str | None = COUNTRY_NAMES[0]):
                     get_data_store_path(source="jobs") / "cgan-forecast" / f"GAN_{data_date.strftime('%Y%m%d')}.nc"
                 )
                 save_to_new_filesystem_structure(
-                    file_path=cgan_file_path,
-                    source="cgan-forecast",
-                    part_to_replace="GAN_",
+                    file_path=cgan_file_path, source="cgan-forecast", part_to_replace="GAN_", preserve_file=False
                 )
                 cgan_ifs_path = get_data_store_path(source="jobs") / "cgan-ifs" / ifs_filename
                 if cgan_ifs_path.exists():
@@ -289,9 +290,7 @@ def syncronize_post_processed_ifs_data(mask_region: str | None = COUNTRY_NAMES[0
                     if gbmc_file is not None:
                         dest_file = dest_dir / gbmc_file
                         save_to_new_filesystem_structure(
-                            file_path=dest_file,
-                            source="cgan-ifs",
-                            part_to_replace="IFS_",
+                            file_path=dest_file, source="cgan-ifs", part_to_replace="IFS_", preserve_file=True
                         )
 
         generate_cgan_forecasts()

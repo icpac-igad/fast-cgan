@@ -191,9 +191,17 @@ def save_to_new_filesystem_structure(
                 else:
                     logger.debug(f"succeefully migrated dataset slice for {country_name}")
     if not len(errors):
-        if "IFS_" in file_path.name and not preserve_file:
-            logger.debug(f"removing GBMC IFS file {file_path.name} after a successful migration")
+        if not preserve_file:
+            logger.debug(f"removing forecast file {file_path.name} after a successful migration")
             file_path.unlink(missing_ok=True)
+        if "GAN_" in file_path.name:
+            logger.debug(f"removing GBMC forecast file {file_path.name} after a cGAN generation")
+            gbmc_ifs_path = (
+                get_data_store_path(source="jobs")
+                / "cgan-ifs"
+                / file_path.name.replace("GAN_", "IFS_").replace(".nc", "_00Z.nc")
+            )
+            gbmc_ifs_path.unlink()
     else:
         logger.error(
             f"failed to migrate {target_file.name} with following {len(errors)} Errors: {' <-> '.join(errors)}"
@@ -217,7 +225,9 @@ def migrate_files(source: str):
     logger.info(f"processing file-structure migration for {len(data_files)} {source} data files")
     # copy data_files to new files path
     for dfile in data_files:
-        save_to_new_filesystem_structure(file_path=dfile, source=source, part_to_replace=part_to_replace)
+        save_to_new_filesystem_structure(
+            file_path=dfile, source=source, part_to_replace=part_to_replace, preserve_file=False
+        )
 
 
 def set_data_sycn_status(source: str | None = "open-ifs", status: int | None = 1):

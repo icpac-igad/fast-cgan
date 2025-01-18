@@ -84,7 +84,7 @@ def run_ecmwf_ifs_sync(
     min_nc_size: float | None = 360,
 ):
     # create data download client
-    client = Client(source=source, model=model, resol=resolution)
+    client = Client(source="ecmwf", model=model, resol=resolution)
     # get latest available forecast date
     latest_fdate = client.latest()
     # construct data store path

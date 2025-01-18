@@ -13,7 +13,7 @@ COPY ./pyproject.toml ./poetry.lock ./README.md /tmp/
 
 RUN sed -i -e 's/>=3.10,<=3.13/>=3.10,<3.12/g' pyproject.toml && poetry lock && \
     poetry add git+${GAN_REPO}@${GAN_BRANCH} && \
-    git clone ${GAN_REPO} -b {GAN_BRANCH} /tmp/code
+    git clone ${GAN_REPO} -b ${GAN_BRANCH} /tmp/code
 
 ARG PYTHON_VERSION=3.10
 FROM python:${PYTHON_VERSION}-slim AS runner
