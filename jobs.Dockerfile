@@ -43,6 +43,6 @@ COPY --from=builder /tmp/pyproject.toml /tmp/poetry.lock /tmp/README.md ${WORK_H
 COPY --from=builder /tmp/code ${WORK_HOME}/ensemble-cgan
 COPY --chown=${USER_NAME}:root ./fastcgan ${WORK_HOME}/fastcgan
 ENV PATH=${WORK_HOME}/.local/bin:$PATH
-RUN pip install --no-cache-dir --upgrade -e .
+RUN pip install --no-cache-dir -e .
 
 CMD ["python", "fastcgan/jobs/manager.py"]
