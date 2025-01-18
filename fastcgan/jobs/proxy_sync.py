@@ -53,6 +53,55 @@ def retrieve_cgan_data_links(
     return datasets_links
 
 
+def retrieve_ens_counts_datasets(source: str = Literal["jurre-brishti", "mvua-kubwa"]):
+    model_path = "Jurre_brishti_counts" if source == "jurre-brishti" else "Mvua_kubwa_counts"
+    dates_json = f"http://megacorr.dynu.net/ICPAC/cGAN_examplePlots/data/{model_path}/available_dates.json"
+    r = requests.get(dates_json)
+    if r.status_code == 200:
+        forecast_dates = r.json()
+        forecasts_dir = getenv("FORECAST_DIR", "./data")
+        for year in reversed(forecast_dates.keys()):
+            if year != "2025":
+                for month in reversed(forecast_dates[year].keys()):
+                    for day in reversed(forecast_dates[year][month].keys()):
+                        for start_time in reversed(forecast_dates[year][month][day].keys()):
+                            for valid_time in reversed(forecast_dates[year][month][day][start_time]):
+                                month_str = str(month).rjust(2, "0")
+                                day_str = str(day).rjust(2, "0")
+                                start_time_str = str(start_time).rjust(2, "0")
+                                dwnld_link = (
+                                    f"http://megacorr.dynu.net/ICPAC/cGAN_examplePlots/data/{model_path}/{year}"
+                                    + f"/counts_{year}{month_str}{day_str}_{start_time_str}_{valid_time}h.nc"
+                                )
+                                destination = Path(f"{forecasts_dir}/{source}/{year}/{month_str}")
+                                if not destination.exists():
+                                    destination.mkdir(parents=True)
+                                logger.debug(f"trying download of {dwnld_link}")
+                                try:
+                                    file_path = (
+                                        destination
+                                        / f"counts_{year}{month_str}{day_str}_{start_time_str}_{valid_time}h.nc"
+                                    )
+                                    with requests.get(dwnld_link, stream=True) as r:
+                                        logger.debug(f"downloading {dwnld_link} into {destination}")
+
+                                        if r.status_code == 200:
+                                            with file_path.open(mode="wb") as f:
+                                                f.write(r.content)
+                                            logger.info(
+                                                f"Finished downloading {dwnld_link}.\t"
+                                                + f"Data stream was saved in {file_path.name}"
+                                            )
+                                        else:
+                                            logger.error(
+                                                f"failed to download dataset file {dwnld_link} "
+                                                + f"with http response {r.text}"
+                                            )
+
+                                except Exception as err:
+                                    logger.error(f"failed to download {dwnld_link} with error {err}")
+
+
 def sync_data_source(
     sources: str,
     start_month: int = 1,
@@ -61,35 +110,39 @@ def sync_data_source(
     provider_url: str = "https://cgan.icpac.net",
 ) -> None:
     for source in sources.split(","):
-        data_urls = retrieve_cgan_data_links(
-            start_month=start_month,
-            final_month=final_month,
-            year=year,
-            data_path=source,
-            provider_url=provider_url,
-        )
-        for datafile_url in data_urls:
-            logger.debug(f"trying download of {datafile_url}")
-            try:
-                forecasts_dir = getenv("FORECAST_DIR", "./data")
-                relative_path = datafile_url.replace(provider_url, "").replace(f"/{source}", "")
-                destination = Path(f"{forecasts_dir}/{source}/{relative_path}".replace("%20", " "))
-                with requests.get(datafile_url, stream=True) as r:
-                    logger.debug(f"downloading {datafile_url} into {destination}")
+        if source == "mvua-kubwa" or source == "jurre-brishti":
+            retrieve_ens_counts_datasets(source)
+        else:
+            data_urls = retrieve_cgan_data_links(
+                start_month=start_month,
+                final_month=final_month,
+                year=year,
+                data_path=source,
+                provider_url=provider_url,
+            )
+            for datafile_url in data_urls:
+                logger.debug(f"trying download of {datafile_url}")
+                try:
+                    forecasts_dir = getenv("FORECAST_DIR", "./data")
+                    relative_path = datafile_url.replace(provider_url, "").replace(f"/{source}", "")
+                    destination = Path(f"{forecasts_dir}/{source}/{relative_path}".replace("%20", " "))
+                    with requests.get(datafile_url, stream=True) as r:
+                        logger.debug(f"downloading {datafile_url} into {destination}")
 
-                    if r.status_code == 200:
-                        with destination.open(mode="wb") as f:
-                            f.write(r.content)
-                    else:
-                        logger.error(f"failed to download dataset file {datafile_url} with error {r.text}")
-                        return None
+                        if r.status_code == 200:
+                            with destination.open(mode="wb") as f:
+                                f.write(r.content)
+                        else:
+                            logger.error(f"failed to download dataset file {datafile_url} with error {r.text}")
+                            return None
 
-                    logger.debug(f"Finished downloading {datafile_url}.\nData stream was saved in {f.name}")
+                        logger.debug(f"Finished downloading {datafile_url}.\nData stream was saved in {f.name}")
 
-            except Exception as e:
-                logger.error(f"Error *{e}*")
+                except Exception as e:
+                    logger.error(f"Error *{e}*")
 
 
+data_source_options = "cgan-forecast,mvua-kubwa,jurre-brishti,cgan-ifs,open-ifs"
 if __name__ == "__main__":
     parser = ArgumentParser(
         prog="data-download",
@@ -126,7 +179,7 @@ if __name__ == "__main__":
         "--source",
         dest="sources",
         type=str,
-        default="cgan-forecast,cgan-ifs,open-ifs",
-        help="a list of data sources separated by comma: options are cgan-forecast,cgan-ifs,open-ifs",
+        default=data_source_options,
+        help=f"a list of data sources separated by comma: options are {data_source_options}",
     )
     sync_data_source(**vars(parser.parse_args()))

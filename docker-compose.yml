@@ -3,7 +3,7 @@ services:
     image: redis:alpine
     container_name: cgan-redis
     volumes:
-      - ./data/redis:/data
+      - ${REDIS_DATA_DIR:-./data/redis}:/data
     ports:
       - ${REDIS_CACHE_HOST:-172.17.0.1}:${REDIS_CACHE_PORT:-6379}:6379
 
@@ -29,7 +29,7 @@ services:
       - APP_VERSION=${APP_VERSION:-0.1}
       - SUB_PATH=${SUB_PATH:-}
       - FORECASTS_DATA_DIR=${APP_FORECASTS_DATA_DIR:-/opt/cgan/forecasts}
-      - CACHE_DIR=${APP_CACHE_DIR:-/code/cache}
+      - CACHE_DIR=${APP_CACHE_DIR:-/opt/app/cache}
       - LOGS_DIR=${APP_LOGS_DIR:-/opt/app/logs}
       - ENVIRONMENT=${ENVIRONMENT:-production}
     ports:
@@ -37,7 +37,7 @@ services:
     volumes:
       - ${FORECASTS_DATA_DIR:-./data/forecasts}:${APP_FORECASTS_DATA_DIR:-/opt/cgan/forecasts}
       - ${LOGS_DIR:-./data/logs}:${APP_LOGS_DIR:-/opt/app/logs}
-      - ${CACHE_DIR:-./data/cache}:${APP_CACHE_DIR:-/code/cache}
+      - ${CACHE_DIR:-./data/cache}:${APP_CACHE_DIR:-/opt/app/cache}
     depends_on:
       - redis
 
@@ -61,8 +61,8 @@ services:
       - ${FORECASTS_DATA_DIR:-./data/forecasts}:${APP_FORECASTS_DATA_DIR:-/opt/cgan/forecasts}
       - ${JOBS_DATA_DIR:-./data/jobs}:${APP_JOBS_DATA_DIR:-/opt/cgan/jobs}
       - ${LOGS_DIR:-./data/logs}:${APP_LOGS_DIR:-/opt/cgan/logs}
-      - ${CGAN_MAIN_CONFIG:-./data/configs/main.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/confg.yaml:ro
-      - ${CGAN_DATA_PATHS_CONFIG:-./data/configs/data_paths.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/data_paths.yaml:ro
-      - ${CGAN_FORECAST_CONFIG:-./data/configs/forecast.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/forecast.yaml:ro
-      - ${CGAN_LOCAL_CONFIG:-./data/configs/local.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/local_config.yaml:ro
+      - ${CGAN_MAIN_CONFIG:-./configs/config.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/confg.yaml:ro
+      - ${CGAN_DATA_PATHS_CONFIG:-./configs/data_paths.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/data_paths.yaml:ro
+      - ${CGAN_FORECAST_CONFIG:-./configs/forecast.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/forecast.yaml:ro
+      - ${CGAN_LOCAL_CONFIG:-./configs/local_config.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/local_config.yaml:ro
       - ${IFS_SERVER_KEY:-./data/private/id_rsa.key}:${IFS_PRIVATE_KEY:-/srv/ssl/private.key}:ro

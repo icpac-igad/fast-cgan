@@ -235,15 +235,14 @@ def generate_cgan_forecasts(mask_region: str | None = COUNTRY_NAMES[0]):
                 )
 
 
-def syncronize_post_processed_ifs_data(mask_region: str | None = COUNTRY_NAMES[0], verbose: bool | None = False):
+def syncronize_post_processed_ifs_data(mask_region: str | None = COUNTRY_NAMES[0]):
     logger.debug(f"received cGAN data syncronization for {mask_region}")
     if not get_data_sycn_status(source="cgan"):
         # set data syncronization status
         set_data_sycn_status(source="cgan", status=1)
         gan_dates = get_forecast_data_dates(mask_region=mask_region, source="cgan")
-        gan_dates = ["Feb 01, 2024"] if not len(gan_dates) else gan_dates
-        # final_data_date = datetime.strptime(gan_dates[0].lower(), "%b %d, %Y")
-        final_data_date = datetime(2024, 8, 10)
+        gan_dates = [getenv("GAN_SYNC_START_DATE", "Jan 01, 2024")] if not len(gan_dates) else gan_dates
+        final_data_date = datetime.strptime(gan_dates[0].lower(), "%b %d, %Y")
         delta = datetime.now() - final_data_date
         logger.debug(f"syncronizing cGAN data for the period {final_data_date.date()} to {datetime.now().date()}")
 

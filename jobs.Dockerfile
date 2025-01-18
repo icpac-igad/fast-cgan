@@ -39,7 +39,7 @@ USER ${USER_NAME}
 WORKDIR ${WORK_HOME}
 
 COPY --from=builder /tmp/pyproject.toml /tmp/poetry.lock /tmp/README.md ${WORK_HOME}/
-COPY --chown=${USER_NAME}:root --chmod=0754 ./fastcgan ${WORK_HOME}/fastcgan
+COPY --chown=${USER_NAME}:root ./fastcgan ${WORK_HOME}/fastcgan
 ENV PATH=${WORK_HOME}/.local/bin:$PATH
 RUN pip install --no-cache-dir --upgrade -e .
 

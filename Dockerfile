@@ -1,14 +1,14 @@
 # --------- requirements ---------
-ARG PYTHON_VERSION=3.11
-FROM python:${PYTHON_VERSION}-slim AS builder
+# ARG PYTHON_VERSION=3.11
+# FROM python:${PYTHON_VERSION}-slim AS builder
 
-WORKDIR /tmp
+# WORKDIR /tmp
 
-RUN pip install poetry poetry-plugin-export
+# RUN pip install poetry poetry-plugin-export
 
-COPY ./pyproject.toml ./poetry.lock* ./README.md /tmp/
+# COPY ./pyproject.toml ./poetry.lock* ./README.md /tmp/
 
-RUN poetry export -f requirements.txt --output requirements.txt --without-hashes
+# RUN poetry export -f requirements.txt --output requirements.txt --without-hashes
 
 
 # --------- final image build ---------
@@ -31,10 +31,12 @@ RUN groupadd --gid ${GROUP_ID} ${USER_NAME} && \
 USER ${USER_NAME}
 WORKDIR ${WORK_HOME}
 
-COPY --from=builder /tmp/requirements.txt ${WORK_HOME}/requirements.txt
+# COPY --from=builder /tmp/requirements.txt ${WORK_HOME}/requirements.txt
+COPY --chown=${USER_ID}:root README.md pyproject.toml poetry.lock ${WORK_HOME}/
+COPY --chown=${USER_NAME}:root ./fastcgan ${WORK_HOME}/fastcgan
 ENV PATH=${WORK_HOME}/.local/bin:${PATH}
-RUN pip install --no-cache-dir --upgrade -r ${WORK_HOME}/requirements.txt
+RUN pip install --no-cache-dir --upgrade -e .
 
-COPY --chown=${USER_ID}:root ./fastcgan  ${WORK_HOME}/fastcgan
+# COPY --chown=${USER_ID}:root ./fastcgan  ${WORK_HOME}/fastcgan
 
 CMD ["uvicorn", "fastcgan.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
