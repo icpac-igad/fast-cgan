@@ -64,6 +64,7 @@ def post_process_ecmwf_grib2_dataset(
     mask_region: str | None = COUNTRY_NAMES[0],
     save_for_countries: bool | None = True,
     archive_grib2: bool | None = False,
+    min_grib2_size: float | None = 4.1 * 1024,
 ) -> None:
     logger.info(f"executing post-processing task for {grib2_file_name}")
     data_date = datetime.strptime(grib2_file_name.split("-")[0], "%Y%m%d%H%M%S")
@@ -76,8 +77,8 @@ def post_process_ecmwf_grib2_dataset(
         file_name=nc_file_name,
         data_date=data_date,
     )
-
-    if not nc_file.exists() or force_process:
+    grib2_size = 0 if not grib2_file.exists() else grib2_file.stat().st_size / (1024 * 1024)
+    if (not nc_file.exists() or force_process) and grib2_size >= min_grib2_size:
         logger.info(f"post-processing ECMWF open IFS forecast data file {grib2_file_name}")
         ds = None
         for _ in range(re_try_times):
