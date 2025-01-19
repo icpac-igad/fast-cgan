@@ -78,7 +78,10 @@ def post_process_ecmwf_grib2_dataset(
         data_date=data_date,
     )
     grib2_size = 0 if not grib2_file.exists() else grib2_file.stat().st_size / (1024 * 1024)
-    if (not nc_file.exists() or force_process) and grib2_size >= min_grib2_size:
+    # remove grib2 file if its size is less than the required size
+    if grib2_size < min_grib2_size:
+        grib2_file.unlink()
+    elif not nc_file.exists() or force_process:
         logger.info(f"post-processing ECMWF open IFS forecast data file {grib2_file_name}")
         ds = None
         for _ in range(re_try_times):
