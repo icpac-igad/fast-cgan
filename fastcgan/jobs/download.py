@@ -162,9 +162,12 @@ def post_process_ecmwf_grib2_dataset(
 def post_process_downloaded_ecmwf_forecasts(source: str | None = "open-ifs") -> None:
     downloads_path = get_data_store_path(source="jobs") / source
     grib2_files = [dfile.name for dfile in downloads_path.iterdir() if dfile.name.endswith(".grib2")]
-    logger.info(f"starting batch post-processing tasks for {'  <---->  '.join(grib2_files)}")
-    for grib2_file in grib2_files:
-        post_process_ecmwf_grib2_dataset(source=source, grib2_file_name=grib2_file, force_process=True)
+    if not len(grib2_files):
+        logger.warning("no un-processed open-ifs datasets found. task skipped!")
+    else:
+        logger.info(f"starting batch post-processing tasks for {'  <---->  '.join(grib2_files)}")
+        for grib2_file in grib2_files:
+            post_process_ecmwf_grib2_dataset(source=source, grib2_file_name=grib2_file, force_process=True)
 
 
 def syncronize_open_ifs_forecast_data(
@@ -189,7 +192,7 @@ def syncronize_open_ifs_forecast_data(
 
         # set data syncronization status
         set_data_sycn_status(source="open-ifs", status=1)
-        with concurrent.futures.ThreadPoolExecutor(max_workers=cpu_count()) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=cpu_count() * 4) as executor:
             results = [
                 executor.submit(
                     run_ecmwf_ifs_sync,
@@ -224,7 +227,7 @@ def generate_cgan_forecasts(mask_region: str | None = COUNTRY_NAMES[0]):
                 file_name=f"{data_date.strftime('%Y%m%d')}_00Z.nc",
                 mask_region=mask_region,
             )
-            store_path = get_data_store_path(source="cgan-ifs", mask_region=mask_region)
+            store_path = get_data_store_path(source="cgan-ifs")
             try:
                 subprocess.call(
                     shell=True,
@@ -245,12 +248,15 @@ def generate_cgan_forecasts(mask_region: str | None = COUNTRY_NAMES[0]):
 def post_process_downloaded_cgan_ifs(source: str | None = "cgan-ifs"):
     downloads_path = get_data_store_path(source="jobs") / source
     gbmc_files = list(downloads_path.iterdir())
-    logger.info(
-        f"starting batch post-processing tasks for {'  <---->  '.join([gbmc_file.name for gbmc_file in gbmc_files])}"
-    )
-    for gbmc_file in gbmc_files:
-        save_to_new_filesystem_structure(file_path=gbmc_file, source=source, part_to_replace="IFS_")
-    generate_cgan_forecasts()
+    if not len(gbmc_files):
+        logger.warning("no un-processed cgan-ifs datasets found. task skipped!")
+    else:
+        logger.info(
+            f"starting batch post-processing task for {'  <---->  '.join([gbmc_file.name for gbmc_file in gbmc_files])}"
+        )
+        for gbmc_file in gbmc_files:
+            save_to_new_filesystem_structure(file_path=gbmc_file, source=source, part_to_replace="IFS_")
+        generate_cgan_forecasts()
 
 
 def syncronize_post_processed_ifs_data(mask_region: str | None = COUNTRY_NAMES[0]):
@@ -274,7 +280,7 @@ def syncronize_post_processed_ifs_data(mask_region: str | None = COUNTRY_NAMES[0
         if not dest_dir.exists():
             dest_dir.mkdir(parents=True)
         data_dates = [(final_data_date + timedelta(days=i)).strftime("%Y%m%d") for i in range(delta.days + 1)]
-        with concurrent.futures.ThreadPoolExecutor(max_workers=cpu_count()) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=cpu_count() * 4) as executor:
             results = [
                 executor.submit(
                     run_sftp_rsync,
@@ -283,7 +289,7 @@ def syncronize_post_processed_ifs_data(mask_region: str | None = COUNTRY_NAMES[0
                     source_dir=src_dir,
                     dest_dir=str(dest_dir),
                 )
-                for data_date in data_dates[:1]
+                for data_date in data_dates
             ]
 
             for future in concurrent.futures.as_completed(results):
