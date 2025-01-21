@@ -248,7 +248,7 @@ def generate_cgan_forecasts(model: cgan_model_literal, mask_region: str | None =
             logger.info(f"generating {model} cGAN forecast for {ifs_date}")
             # generate forecast for date
             data_date = datetime.strptime(ifs_date, "%b %d, %Y")
-            gbmc_source = "cgan-ifs-7d-ens" if model == "mvua-kubwa" else "cgan-ifs-6h-ens"
+            gbmc_source = "cgan-ifs-7d-ens" if model == "mvua-kubwa-ens" else "cgan-ifs-6h-ens"
             gbmc_filename = get_dataset_file_path(
                 source=gbmc_source,
                 data_date=data_date,
@@ -278,15 +278,17 @@ def post_process_downloaded_cgan_ifs(model: cgan_ifs_literal):
             if downloads_path.exists():
                 gbmc_files = [file_path for file_path in downloads_path.iterdir() if file_path.name.endswith(".nc")]
                 if not len(gbmc_files):
-                    logger.warning("no un-processed cgan-ifs datasets found. task skipped!")
+                    logger.warning(f"no un-processed {model} datasets found. task skipped!")
                 else:
                     logger.info(
-                        "starting batch post-processing task for "
+                        f"starting {model} forecasts batch post-processing task for "
                         + f"{'  <---->  '.join([gbmc_file.name for gbmc_file in gbmc_files])}"
                     )
                     for gbmc_file in gbmc_files:
                         save_to_new_filesystem_structure(file_path=gbmc_file, source=model, part_to_replace="IFS_")
-                    generate_cgan_forecasts(source=model)
+                    generate_cgan_forecasts(
+                        source="jurre-brishti-ens" if model == "cgan-ifs-6h-ens" else "mvua-kubwa-ens"
+                    )
                 # purge invalid files
                 for file_path in downloads_path.iterdir():
                     file_path.unlink()
@@ -342,7 +344,8 @@ def syncronize_post_processed_ifs_data(model: cgan_ifs_literal, mask_region: str
         while True:
             if not data_sync_jobs_status():
                 generate_cgan_forecasts(
-                    model="jurre-brishti" if model == "cgan-ifs-6h-ens" else "mvua-kubwa", mask_region=mask_region
+                    model="jurre-brishti-ens" if model == "cgan-ifs-6h-ens" else "mvua-kubwa-ens",
+                    mask_region=mask_region,
                 )
                 # set data syncronization status
                 set_data_sycn_status(source=model, status=0)

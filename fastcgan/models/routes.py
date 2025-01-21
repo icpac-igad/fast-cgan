@@ -1,6 +1,8 @@
 from pydantic import BaseModel
 from show_forecasts.constants import COLOR_SCHEMES, COUNTRY_NAMES
 
+from fastcgan.jobs.stubs import cgan_model_literal
+from fastcgan.tools.constants import GAN_MODELS
 from fastcgan.tools.enums import (
     AccumulationTime,
     IfsDataParameter,
@@ -10,6 +12,7 @@ from fastcgan.tools.enums import (
 
 
 class BaseForecastParams(BaseModel):
+    model: cgan_model_literal | None = GAN_MODELS[0]["name"]
     mask_area: str | None = COUNTRY_NAMES[0]
     forecast_date: str | None = None
     plot_units: PrecipitationUnit | None = PrecipitationUnit.hour6

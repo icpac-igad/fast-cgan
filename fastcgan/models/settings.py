@@ -5,6 +5,12 @@ class ForecastDate(BaseModel):
     date: str
 
 
+class ForecastModel(BaseModel):
+    name: str
+    label: str
+    value: str
+
+
 class MaskArea(BaseModel):
     name: str
 

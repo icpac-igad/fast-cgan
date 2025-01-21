@@ -15,7 +15,7 @@ from show_forecasts.data_utils import get_locations_data, get_region_extent
 
 from fastcgan.jobs.stubs import cgan_ifs_literal, cgan_model_literal, open_ifs_literal
 from fastcgan.tools.config import settings
-from fastcgan.tools.constants import ACCUMULATION_UNITS
+from fastcgan.tools.constants import ACCUMULATION_UNITS, GAN_MODELS
 
 
 def get_locations_data_for_region(region: str | None = None):
@@ -41,9 +41,12 @@ def get_relevant_forecast_steps(start: int | None = 30, final: int | None = 54, 
 
 
 def get_data_store_path(
-    source: open_ifs_literal | cgan_ifs_literal | cgan_model_literal,
+    source: str,
     mask_region: str | None = None,
 ) -> Path:
+    if source in [model["name"] for model in GAN_MODELS]:
+        source = f"{source}-ens"
+
     if source == "jobs":
         data_dir_path = Path(settings.ASSETS_DIR_MAP["jobs"])
     else:
@@ -87,8 +90,10 @@ def get_directory_files(data_path: Path, files: set[Path] | None = set()) -> set
 
 def get_forecast_data_files(
     mask_region: str,
-    source: open_ifs_literal | cgan_ifs_literal | cgan_model_literal,
+    source: str,
 ) -> list[str]:
+    if source in [model["name"] for model in GAN_MODELS]:
+        source = f"{source}-ens"
     store_path = get_data_store_path(source=source, mask_region=mask_region)
     data_files = get_directory_files(data_path=store_path, files=set())
     return [str(dfile).split("/")[-1] for dfile in data_files]
@@ -107,6 +112,8 @@ def get_forecast_data_dates(
     source: open_ifs_literal | cgan_ifs_literal | cgan_model_literal,
     strict: bool | None = True,
 ) -> list[str]:
+    if source in [model["name"] for model in GAN_MODELS]:
+        source = f"{source}-ens"
     data_files = get_forecast_data_files(source=source, mask_region=mask_region)
     data_dates = sorted({dfile.replace(".nc", "").split("-")[2].split("_")[0] for dfile in data_files})
     if not strict or source != "open-ifs":

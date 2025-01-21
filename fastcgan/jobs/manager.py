@@ -5,7 +5,6 @@ import sys
 import time
 from argparse import ArgumentParser
 from pathlib import Path
-from typing import Literal
 
 import schedule
 from loguru import logger
@@ -16,10 +15,11 @@ from fastcgan.jobs.download import (
     syncronize_open_ifs_forecast_data,
     syncronize_post_processed_ifs_data,
 )
+from fastcgan.jobs.stubs import cgan_ifs_literal, open_ifs_literal
 from fastcgan.jobs.utils import set_data_sycn_status
 
 
-def initialize_logger(source: Literal["jurre-brishti", "mvua-kubwa", "open-ifs"]):
+def initialize_logger(source: cgan_ifs_literal | open_ifs_literal):
     logger_opts = {
         "enqueue": True,
         "backtrace": True,

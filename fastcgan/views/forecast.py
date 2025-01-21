@@ -17,7 +17,9 @@ from show_forecasts.show_IFS_open_data import (
     plot_forecast_ensemble as plot_ifs_forecast_ensemble,
 )
 
+from fastcgan.jobs.stubs import cgan_model_literal, open_ifs_literal
 from fastcgan.jobs.utils import get_data_store_path, get_forecast_data_dates
+from fastcgan.tools.constants import GAN_MODELS
 from fastcgan.tools.enums import (
     AccumulationTime,
     IfsDataParameter,
@@ -32,6 +34,7 @@ from fastcgan.views.tools import (
 
 
 async def open_ifs_forecast(
+    model: open_ifs_literal | None = None,
     vis_param: IfsDataParameter | None = IfsDataParameter.tp,
     plot_units: PrecipitationUnit | None = PrecipitationUnit.hour6,
     forecast_date: str | None = None,
@@ -76,6 +79,7 @@ async def open_ifs_forecast(
 
 
 async def open_ifs_forecast_ensemble(
+    model: open_ifs_literal | None = None,
     vis_param: IfsDataParameter | None = IfsDataParameter.tp,
     plot_units: PrecipitationUnit | None = PrecipitationUnit.hour6,
     forecast_date: str | None = None,
@@ -121,6 +125,7 @@ async def open_ifs_forecast_ensemble(
 
 
 async def cgan_forecast(
+    model: cgan_model_literal | None = GAN_MODELS[0]["name"],
     vis_param: IfsDataParameter | None = IfsDataParameter.tp,
     plot_units: PrecipitationUnit | None = PrecipitationUnit.hour6,
     acc_time: AccumulationTime | None = AccumulationTime.hour6,
@@ -129,15 +134,14 @@ async def cgan_forecast(
     mask_area: str | None = COUNTRY_NAMES[0],
     color_style: str | None = COLOR_SCHEMES[0],
 ) -> list[list[Path], xr.Dataset | None]:
-    source = "cgan-forecast"
     if forecast_date is None:
         forecast_date = get_forecast_data_dates(
             mask_region=COUNTRY_NAMES[0],
-            source=source,
+            source=model,
         )[0]
     data_date_obj = datetime.strptime(forecast_date, "%b %d, %Y")
     maps_path = await get_forecast_maps_path(
-        source=source,
+        source=model,
         vis_param=vis_param,
         plot_units=plot_units,
         data_date=data_date_obj,
@@ -148,7 +152,7 @@ async def cgan_forecast(
     )
     maps_exist = [file_path.exists() for file_path in maps_path]
     if not all(maps_exist if len(maps_path) == 1 else maps_exist[:-1]):
-        data_store = get_data_store_path(source=source)
+        data_store = get_data_store_path(source=model)
         data = load_GAN_forecast(
             forecast_init_date=data_date_obj,
             data_dir=str(data_store),
@@ -169,6 +173,7 @@ async def cgan_forecast(
 
 
 async def cgan_forecast_ensemble(
+    model: cgan_model_literal | None = GAN_MODELS[0]["name"],
     vis_param: IfsDataParameter | None = IfsDataParameter.tp,
     plot_units: PrecipitationUnit | None = PrecipitationUnit.hour6,
     start_time: ValidStartTime | None = ValidStartTime.six,
@@ -177,16 +182,15 @@ async def cgan_forecast_ensemble(
     color_style: str | None = COLOR_SCHEMES[0],
     max_ens_plots: int | None = 50,
 ) -> list[Path]:
-    source = "cgan-forecast"
     start_time = start_time if start_time != ValidStartTime.combine else ValidStartTime.six
     if forecast_date is None:
         forecast_date = get_forecast_data_dates(
             mask_region=COUNTRY_NAMES[0],
-            source=source,
+            source=model,
         )[0]
     data_date_obj = datetime.strptime(forecast_date, "%b %d, %Y")
     maps_path = await get_forecast_maps_path(
-        source=source,
+        source=model,
         vis_param=vis_param,
         plot_units=plot_units,
         start_time=start_time,
@@ -197,7 +201,7 @@ async def cgan_forecast_ensemble(
         max_ensemble_plots=max_ens_plots,
     )
     if not maps_path[0].exists():
-        data_store = get_data_store_path(source=source)
+        data_store = get_data_store_path(source=model)
         data = load_GAN_forecast(
             forecast_init_date=data_date_obj,
             data_dir=str(data_store),
@@ -218,6 +222,7 @@ async def cgan_forecast_ensemble(
 
 
 async def cgan_threshold_chance(
+    model: cgan_model_literal | None = GAN_MODELS[0]["name"],
     threshold: float | None = 5,
     vis_param: IfsDataParameter | None = IfsDataParameter.tp,
     plot_units: PrecipitationUnit | None = PrecipitationUnit.hour6,
@@ -227,15 +232,14 @@ async def cgan_threshold_chance(
     color_style: str | None = COLOR_SCHEMES[0],
     show_percentages: bool | None = None,
 ) -> list[Path]:
-    source = "cgan-forecast"
     if forecast_date is None:
         forecast_date = get_forecast_data_dates(
             mask_region=COUNTRY_NAMES[0],
-            source=source,
+            source=model,
         )[0]
     data_date_obj = datetime.strptime(forecast_date, "%b %d, %Y")
     maps_path = await get_forecast_maps_path(
-        source=source,
+        source=model,
         vis_param=vis_param,
         plot_units=plot_units,
         data_date=data_date_obj,
@@ -245,7 +249,7 @@ async def cgan_threshold_chance(
         show_percentages=show_percentages,
     )
     if not maps_path[0].exists():
-        data_store = get_data_store_path(source=source)
+        data_store = get_data_store_path(source=model)
         data = load_GAN_forecast(
             forecast_init_date=data_date_obj,
             data_dir=str(data_store),
@@ -267,6 +271,7 @@ async def cgan_threshold_chance(
 
 
 async def cgan_local_histogram(
+    model: cgan_model_literal | None = GAN_MODELS[0]["name"],
     forecast_date: str | None = None,
     location: str | None = "LatLng",
     country: str | None = None,
@@ -293,11 +298,10 @@ async def cgan_local_histogram(
 
     if marker_map.exists():
         map_images.append(marker_map)
-        source = "cgan-forecast"
         if forecast_date is None:
             forecast_date = get_forecast_data_dates(
                 mask_region=COUNTRY_NAMES[0],
-                source=source,
+                source=model,
             )[0]
         data_date_obj = datetime.strptime(forecast_date, "%b %d, %Y")
         hist_path = await get_local_histogram_chart(
@@ -312,7 +316,7 @@ async def cgan_local_histogram(
         )
 
         if not hist_path.exists():
-            data_store = get_data_store_path(source=source)
+            data_store = get_data_store_path(source=model)
             data = load_GAN_forecast(
                 forecast_init_date=data_date_obj,
                 data_dir=str(data_store),
