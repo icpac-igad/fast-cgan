@@ -153,7 +153,7 @@ def slice_dataset_by_bbox(ds: xr.Dataset, bbox: list[float]):
 def save_to_new_filesystem_structure(
     file_path: Path, source: cgan_model_literal | cgan_ifs_literal, part_to_replace: str | None = None
 ) -> None:
-    mask_region = (os.getenv("DEFAULT_MASK", COUNTRY_NAMES[0]),)
+    mask_region = os.getenv("DEFAULT_MASK", COUNTRY_NAMES[0])
     logger.debug(f"received filesystem migration task for - {mask_region}- {source} - {file_path}")
     set_data_sycn_status(source=source, status=1)
     try:
