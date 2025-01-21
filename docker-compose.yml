@@ -90,7 +90,7 @@ services:
 
   mvua-kubwa-ens:
     image: ${JOBS_IMAGE_NAME:-icpac/cgan-jobs-pipeline}
-    container_name: ${MVUA_ENS_JOBS_CNTR_NAME:-mvua-kubwa-jobs}
+    container_name: ${MVUA_ENS_JOBS_CNTR_NAME:-mvua-kubwa-ens-jobs}
     build:
       context: .
       dockerfile: ${MVUA_ENS_JOBS_DOCKERFILE:-jobs.Dockerfile}

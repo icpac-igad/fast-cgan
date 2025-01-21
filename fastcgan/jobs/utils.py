@@ -163,47 +163,48 @@ def save_to_new_filesystem_structure(
         )
     except Exception:
         logger.error(f"failed to read {source} data file {file_path} with error")
-    fname = file_path.name.replace(part_to_replace, "")
-    data_date = datetime.strptime(
-        fname.replace(".nc", "").split("-")[0].split("_")[0].replace("000000", ""),
-        "%Y%m%d",
-    )
-    target_file = get_dataset_file_path(
-        source=source,
-        data_date=data_date,
-        file_name=fname,
-        mask_region=mask_region,
-    )
-    logger.debug(f"migrating dataset file {file_path} to {target_file}")
-    errors = []
-    try:
-        ds.to_netcdf(target_file, mode="w", format="NETCDF4")
-    except Exception as error:
-        errors.append(f"failed to save {target_file} with error {error}")
     else:
-        logger.debug(f"succeefully saved dataset file {file_path} to {target_file}")
-        for country_name in COUNTRY_NAMES[1:]:
-            # create country slices
-            sliced = slice_dataset_by_bbox(ds=ds, bbox=get_region_extent(shape_name=country_name))
-            if sliced is None:
-                errors.append(f"error slicing {file_path.name} for bbox {country_name}")
-            else:
-                slice_target = get_dataset_file_path(
-                    source=source,
-                    data_date=data_date,
-                    file_name=fname,
-                    mask_region=country_name,
-                )
-                logger.debug(f"migrating dataset slice for {country_name} to {slice_target}")
-                try:
-                    sliced.to_netcdf(slice_target, mode="w", format="NETCDF4")
-                except Exception as error:
-                    errors.append(f"failed to save {slice_target} with error {error}")
+        fname = file_path.name.replace(part_to_replace, "")
+        data_date = datetime.strptime(
+            fname.replace(".nc", "").split("-")[0].split("_")[0].replace("000000", ""),
+            "%Y%m%d",
+        )
+        target_file = get_dataset_file_path(
+            source=source,
+            data_date=data_date,
+            file_name=fname,
+            mask_region=mask_region,
+        )
+        logger.debug(f"migrating dataset file {file_path} to {target_file}")
+        errors = []
+        try:
+            ds.to_netcdf(target_file, mode="w", format="NETCDF4")
+        except Exception as error:
+            errors.append(f"failed to save {target_file} with error {error}")
+        else:
+            logger.debug(f"succeefully saved dataset file {file_path} to {target_file}")
+            for country_name in COUNTRY_NAMES[1:]:
+                # create country slices
+                sliced = slice_dataset_by_bbox(ds=ds, bbox=get_region_extent(shape_name=country_name))
+                if sliced is None:
+                    errors.append(f"error slicing {file_path.name} for bbox {country_name}")
                 else:
-                    logger.debug(f"succeefully migrated dataset slice for {country_name}")
-    if not len(errors):
-        logger.debug(f"removing forecast file {file_path.name} after a successful migration")
-        file_path.unlink(missing_ok=True)
+                    slice_target = get_dataset_file_path(
+                        source=source,
+                        data_date=data_date,
+                        file_name=fname,
+                        mask_region=country_name,
+                    )
+                    logger.debug(f"migrating dataset slice for {country_name} to {slice_target}")
+                    try:
+                        sliced.to_netcdf(slice_target, mode="w", format="NETCDF4")
+                    except Exception as error:
+                        errors.append(f"failed to save {slice_target} with error {error}")
+                    else:
+                        logger.debug(f"succeefully migrated dataset slice for {country_name}")
+        if not len(errors):
+            logger.debug(f"removing forecast file {file_path.name} after a successful migration")
+            file_path.unlink(missing_ok=True)
     set_data_sycn_status(source=source, status=0)
 
 
