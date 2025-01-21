@@ -280,13 +280,14 @@ def post_process_downloaded_cgan_ifs(model: cgan_ifs_literal):
                 if not len(gbmc_files):
                     logger.warning("no un-processed cgan-ifs datasets found. task skipped!")
                 else:
-                    logger.info(
-                        "starting batch post-processing task for "
-                        + f"{'  <---->  '.join([gbmc_file.name for gbmc_file in gbmc_files])}"
-                    )
+                    gbmc_fnames = [gbmc_file.name for gbmc_file in gbmc_files if gbmc_file.name.endswith(".nc")]
+                    logger.info(f"starting batch post-processing task for {'  <---->  '.join({gbmc_fnames})}")
                     for gbmc_file in gbmc_files:
                         save_to_new_filesystem_structure(file_path=gbmc_file, source=model, part_to_replace="IFS_")
                     generate_cgan_forecasts(source=model)
+                # purge invalid files
+                for file_path in downloads_path.iterdir():
+                    file_path.unlink()
             # break the loop
             break
         # sleep for 10 minutes
