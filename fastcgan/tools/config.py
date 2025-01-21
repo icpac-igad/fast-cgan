@@ -32,19 +32,16 @@ class AppSettings(BaseSettings):
 
 
 class AssetPathSettings(BaseSettings):
-    STATIC_ASSETS_DIR: str | None = os.path.expandvars(config("STATIC_DIR", default=os.path.join(base_dir, "static")))
     CACHE_FILES_DIR: str | None = os.path.expandvars(config("CACHE_DIR", default=os.path.join(base_dir, "cache")))
     FORECASTS_DATA_DIR: str | None = os.path.expandvars(
         config("FORECASTS_DATA_DIR", default=os.path.join(base_dir, "./data"))
     )
     JOBS_DATA_DIR: str | None = os.path.expandvars(config("JOBS_DATA_DIR", default=os.path.join(base_dir, "./jobs")))
     ASSETS_DIR_MAP: dict[str, str] = {
-        "static": STATIC_ASSETS_DIR,
         "cache": CACHE_FILES_DIR,
         "jobs": JOBS_DATA_DIR,
         "forecasts": FORECASTS_DATA_DIR,
     }
-    STATIC_BASE_URL: str | None = os.path.expandvars(config("STATIC_URL", default="/static"))
     CACHE_BASE_URL: str | None = os.path.expandvars(config("CACHE_URL", default="/media"))
 
 
@@ -131,7 +128,7 @@ def get_major_towns_data():
         return loads(dp.read())
 
 
-def get_asset_dir_path(asset: Literal["static", "cache"]) -> Path:
+def get_asset_dir_path(asset: Literal["cache"]) -> Path:
     asset_path = Path(settings.ASSETS_DIR_MAP[asset])
     if not asset_path.exists():
         asset_path.mkdir(parents=True)

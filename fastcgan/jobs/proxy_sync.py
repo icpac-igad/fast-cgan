@@ -1,5 +1,5 @@
 from argparse import ArgumentParser
-from typing import Literal
+from typing import Any, Literal
 
 import requests
 from bs4 import BeautifulSoup
@@ -53,63 +53,87 @@ def retrieve_cgan_data_links(
     return datasets_links
 
 
-def retrieve_ens_counts_datasets(source: str = Literal["jurre-brishti", "mvua-kubwa"]):
+def download_ens_dataset(source: str, year: str, month: str, day: str, start_time: str, valid_time: str):
+    data_dir = get_data_store_path(source=source)
+    model_path = "Jurre_brishti_counts" if source == "jurre-brishti" else "Mvua_kubwa_counts"
+    dwnld_link = (
+        f"http://megacorr.dynu.net/ICPAC/cGAN_examplePlots/data/{model_path}/{year}"
+        + f"/counts_{year}{month}{day}_{start_time}_{valid_time}h.nc"
+    )
+    destination = data_dir / year / month
+    if not destination.exists():
+        destination.mkdir(parents=True)
+    logger.debug(f"trying download of {dwnld_link}")
+    try:
+        file_path = destination / f"counts_{year}{month}{day}_{start_time}_{valid_time}h.nc"
+        with requests.get(dwnld_link, stream=True) as r:
+            logger.debug(f"downloading {dwnld_link} into {destination}")
+
+            if r.status_code == 200:
+                with file_path.open(mode="wb") as f:
+                    f.write(r.content)
+                logger.info(f"Finished downloading {dwnld_link}.\t" + f"Data stream was saved in {file_path.name}")
+            else:
+                logger.error(f"failed to download dataset file {dwnld_link} " + f"with http response {r.text}")
+
+    except Exception as err:
+        logger.error(f"failed to download {dwnld_link} with error {err}")
+
+
+def retrieve_ens_counts_datasets_for_date(
+    source: Literal["jurre-brishti", "mvua-kubwa"], data_date: str, forecast_dates: list[dict[str, Any]] | None = None
+):
+    logger.debug(f"received cgan ensemble counts retrieval task for {source} model {data_date}")
+    year, month, day = (str(int(value)) for value in data_date.split("-"))
+    if forecast_dates is None:
+        model_path = "Jurre_brishti_counts" if source == "jurre-brishti" else "Mvua_kubwa_counts"
+        dates_json = f"http://megacorr.dynu.net/ICPAC/cGAN_examplePlots/data/{model_path}/available_dates.json"
+        r = requests.get(dates_json)
+        if r.status_code == 200:
+            forecast_dates = r.json()
+    if forecast_dates is not None:
+        for start_time in reversed(forecast_dates[year][month][day].keys()):
+            for valid_time in reversed(forecast_dates[year][month][day][start_time]):
+                download_ens_dataset(
+                    source=source,
+                    year=year,
+                    month=month.rjust(2, "0"),
+                    day=day.rjust(2, "0"),
+                    start_time=str(start_time).rjust(2, "0"),
+                    valid_time=valid_time,
+                )
+
+
+def retrieve_ens_counts_datasets(source: Literal["jurre-brishti", "mvua-kubwa"]):
     model_path = "Jurre_brishti_counts" if source == "jurre-brishti" else "Mvua_kubwa_counts"
     dates_json = f"http://megacorr.dynu.net/ICPAC/cGAN_examplePlots/data/{model_path}/available_dates.json"
     r = requests.get(dates_json)
     if r.status_code == 200:
         forecast_dates = r.json()
-        data_dir = get_data_store_path(source=source)
         for year in reversed(forecast_dates.keys()):
             for month in reversed(forecast_dates[year].keys()):
                 for day in reversed(forecast_dates[year][month].keys()):
-                    for start_time in reversed(forecast_dates[year][month][day].keys()):
-                        for valid_time in reversed(forecast_dates[year][month][day][start_time]):
-                            month_str = str(month).rjust(2, "0")
-                            day_str = str(day).rjust(2, "0")
-                            start_time_str = str(start_time).rjust(2, "0")
-                            dwnld_link = (
-                                f"http://megacorr.dynu.net/ICPAC/cGAN_examplePlots/data/{model_path}/{year}"
-                                + f"/counts_{year}{month_str}{day_str}_{start_time_str}_{valid_time}h.nc"
-                            )
-                            destination = data_dir / year / month_str
-                            if not destination.exists():
-                                destination.mkdir(parents=True)
-                            logger.debug(f"trying download of {dwnld_link}")
-                            try:
-                                file_path = (
-                                    destination / f"counts_{year}{month_str}{day_str}_{start_time_str}_{valid_time}h.nc"
-                                )
-                                with requests.get(dwnld_link, stream=True) as r:
-                                    logger.debug(f"downloading {dwnld_link} into {destination}")
-
-                                    if r.status_code == 200:
-                                        with file_path.open(mode="wb") as f:
-                                            f.write(r.content)
-                                        logger.info(
-                                            f"Finished downloading {dwnld_link}.\t"
-                                            + f"Data stream was saved in {file_path.name}"
-                                        )
-                                    else:
-                                        logger.error(
-                                            f"failed to download dataset file {dwnld_link} "
-                                            + f"with http response {r.text}"
-                                        )
-
-                            except Exception as err:
-                                logger.error(f"failed to download {dwnld_link} with error {err}")
+                    retrieve_ens_counts_datasets_for_date(
+                        source=source,
+                        forecast_dates=forecast_dates,
+                        data_date=f"{year}-{str(month).rjust(2, '0')}-{str(day).rjust(2, '0')}",
+                    )
 
 
 def sync_data_source(
     sources: str,
-    start_month: int = 1,
-    final_month: int = 12,
-    year: int = 2024,
-    provider_url: str = "https://cgan.icpac.net",
+    data_date: str | None = None,
+    start_month: int | None = 1,
+    final_month: int | None = 12,
+    year: int | None = 2024,
+    provider_url: str | None = "https://cgan.icpac.net",
 ) -> None:
     for source in sources.split(","):
         if source == "mvua-kubwa" or source == "jurre-brishti":
-            retrieve_ens_counts_datasets(source)
+            if data_date is not None:
+                retrieve_ens_counts_datasets_for_date(data_date=data_date, source=source)
+            else:
+                retrieve_ens_counts_datasets(source)
         else:
             data_urls = retrieve_cgan_data_links(
                 start_month=start_month,
@@ -178,5 +202,13 @@ if __name__ == "__main__":
         type=str,
         default=data_source_options,
         help=f"a list of data sources separated by comma: options are {data_source_options}",
+    )
+    parser.add_argument(
+        "-dt",
+        "--date",
+        dest="data_date",
+        type=str,
+        default=None,
+        help="data date in the format YYYY-MM-DD",
     )
     sync_data_source(**vars(parser.parse_args()))

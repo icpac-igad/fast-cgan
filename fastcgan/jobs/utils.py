@@ -1,7 +1,7 @@
+import json
 import os
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
-from typing import Literal
 
 import xarray as xr
 from loguru import logger
@@ -13,6 +13,7 @@ from show_forecasts.constants import (
 )
 from show_forecasts.data_utils import get_locations_data, get_region_extent
 
+from fastcgan.jobs.stubs import cgan_ifs_literal, cgan_model_literal, open_ifs_literal
 from fastcgan.tools.config import settings
 from fastcgan.tools.constants import ACCUMULATION_UNITS
 
@@ -40,7 +41,7 @@ def get_relevant_forecast_steps(start: int | None = 30, final: int | None = 54, 
 
 
 def get_data_store_path(
-    source: Literal["cgan-forecast", "cgan-ifs", "open-ifs", "jobs", "jurre-brishti", "mvua-kubwa"],
+    source: open_ifs_literal | cgan_ifs_literal | cgan_model_literal,
     mask_region: str | None = None,
 ) -> Path:
     if source == "jobs":
@@ -56,7 +57,9 @@ def get_data_store_path(
     return data_dir_path
 
 
-def get_dataset_file_path(source: str, data_date: datetime, file_name: str, mask_region: str | None = None) -> Path:
+def get_dataset_file_path(
+    source: str, data_date: datetime | date, file_name: str, mask_region: str | None = None
+) -> Path:
     store_path = (
         get_data_store_path(source=source, mask_region=mask_region)
         / str(data_date.year)
@@ -83,14 +86,15 @@ def get_directory_files(data_path: Path, files: set[Path] | None = set()) -> set
 
 
 def get_forecast_data_files(
-    mask_region: str, source: Literal["cgan-forecast", "cgan-ifs", "open-ifs", "jurre-brishti", "mvua-kubwa"]
+    mask_region: str,
+    source: open_ifs_literal | cgan_ifs_literal | cgan_model_literal,
 ) -> list[str]:
     store_path = get_data_store_path(source=source, mask_region=mask_region)
     data_files = get_directory_files(data_path=store_path, files=set())
     return [str(dfile).split("/")[-1] for dfile in data_files]
 
 
-def get_ecmwf_files_for_date(data_date: datetime, mask_region: str | None = "East Africa") -> list[str]:
+def get_ecmwf_files_for_date(data_date: datetime, mask_region: str | None = COUNTRY_NAMES[0]) -> list[str]:
     steps = get_relevant_forecast_steps()
     return [
         f"{mask_region.lower().replace(' ', '_')}-open_ifs-{data_date.strftime('%Y%m%d')}000000-{step}h-enfo-ef.nc"
@@ -100,7 +104,7 @@ def get_ecmwf_files_for_date(data_date: datetime, mask_region: str | None = "Eas
 
 def get_forecast_data_dates(
     mask_region: str,
-    source: Literal["cgan-forecast", "cgan-ifs", "open-ifs"],
+    source: open_ifs_literal | cgan_ifs_literal | cgan_model_literal,
     strict: bool | None = True,
 ) -> list[str]:
     data_files = get_forecast_data_files(source=source, mask_region=mask_region)
@@ -146,10 +150,17 @@ def slice_dataset_by_bbox(ds: xr.Dataset, bbox: list[float]):
         return ds
 
 
-def save_to_new_filesystem_structure(file_path: Path, source: str, part_to_replace: str | None = None) -> None:
-    logger.debug(f"received filesystem migration task for {source} - {file_path}")
+def save_to_new_filesystem_structure(
+    file_path: Path, source: cgan_model_literal | cgan_ifs_literal, part_to_replace: str | None = None
+) -> None:
+    mask_region = (os.getenv("DEFAULT_MASK", COUNTRY_NAMES[0]),)
+    logger.debug(f"received filesystem migration task for - {mask_region}- {source} - {file_path}")
+    set_data_sycn_status(source=source, status=1)
     try:
-        ds = standardize_dataset(xr.open_dataset(file_path, decode_times=False))
+        ds = slice_dataset_by_bbox(
+            standardize_dataset(xr.open_dataset(file_path, decode_times=False)),
+            get_region_extent(shape_name=mask_region),
+        )
     except Exception:
         logger.error(f"failed to read {source} data file {file_path} with error")
     fname = file_path.name.replace(part_to_replace, "")
@@ -161,7 +172,7 @@ def save_to_new_filesystem_structure(file_path: Path, source: str, part_to_repla
         source=source,
         data_date=data_date,
         file_name=fname,
-        mask_region=os.getenv("DEFAULT_MASK", "East Africa"),
+        mask_region=mask_region,
     )
     logger.debug(f"migrating dataset file {file_path} to {target_file}")
     errors = []
@@ -193,6 +204,7 @@ def save_to_new_filesystem_structure(file_path: Path, source: str, part_to_repla
     if not len(errors):
         logger.debug(f"removing forecast file {file_path.name} after a successful migration")
         file_path.unlink(missing_ok=True)
+    set_data_sycn_status(source=source, status=0)
 
 
 # migrate dataset files from initial filesystem structure to revised.
@@ -215,26 +227,44 @@ def migrate_files(source: str):
         save_to_new_filesystem_structure(file_path=dfile, source=source, part_to_replace=part_to_replace)
 
 
-def set_data_sycn_status(source: str | None = "open-ifs", status: int | None = 1):
-    file_name = "post-processed-ifs.log" if source == "cgan-forecast" else "ecmwf-open-ifs.log"
-    status_file = Path(os.getenv("LOGS_DIR", "./")) / file_name
-    # initialize with not-active status
-    with open(status_file, "w") as sf:
-        sf.write(str(status))
+def set_data_sycn_status(source: cgan_model_literal | cgan_ifs_literal | open_ifs_literal, status: int | None = 1):
+    status_file = Path(os.getenv("LOGS_DIR", "./")) / "data-sync-tasks-status.json"
+    if not status_file.exists():
+        with open(status_file, "w") as sf:
+            sf.write(json.dumps({source: status}))
+    else:
+        with open(status_file, "w+") as sf:
+            try:
+                data = json.loads(sf.read())
+                data[source] = status
+            except Exception:
+                data = {source: status}
+            sf.write(json.dumps(data))
 
 
-def get_data_sycn_status(source: str | None = "open-ifs") -> int:
-    file_name = "post-processed-ifs.log" if source == "cgan-forecast" else "ecmwf-open-ifs.log"
-    status_file = Path(os.getenv("LOGS_DIR", "./logs")) / file_name
+def get_data_sycn_status(source: cgan_model_literal | cgan_ifs_literal | open_ifs_literal) -> int:
+    status_file = Path(os.getenv("LOGS_DIR", "./")) / "data-sync-tasks-status.json"
 
     if not status_file.exists():
         # initialize with not-active status
         with open(status_file, "w") as sf:
-            sf.write("0")
+            sf.write(json.dumps({source: 0}))
 
     # check if there is an active data syncronization job
     with open(status_file) as sf:
-        return int(sf.read())
+        data = json.loads(sf.read())
+        if source in data.keys():
+            return data[source]
+        return 0
+
+
+def data_sync_jobs_status() -> int:
+    status_file = Path(os.getenv("LOGS_DIR", "./")) / "data-sync-tasks-status.json"
+    if not status_file.exists():
+        return 0
+    with open(status_file) as sf:
+        data = json.loads(sf.read())
+        return all(value > 0 for value in data.values())
 
 
 # Some info to be clear with dates and times

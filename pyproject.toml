@@ -68,7 +68,7 @@ lint.select = [
 ]
 lint.ignore = [
     # https://docs.astral.sh/ruff/rules/#pycodestyle-e-w
-    "E402", # module level import not at top of file
+    # "E402", # module level import not at top of file
     # https://docs.astral.sh/ruff/rules/#pyupgrade-up
     "UP006", # use-pep585-annotation
     "UP007", # use-pep604-annotation

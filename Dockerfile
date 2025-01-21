@@ -35,7 +35,8 @@ WORKDIR ${WORK_HOME}
 COPY --chown=${USER_ID}:root README.md pyproject.toml poetry.lock ${WORK_HOME}/
 COPY --chown=${USER_NAME}:root ./fastcgan ${WORK_HOME}/fastcgan
 ENV PATH=${WORK_HOME}/.local/bin:${PATH}
-RUN pip install --no-cache-dir -e .
+RUN pip install --no-cache-dir -e . && \
+    touch ${WORK_HOME}/.env
 
 # COPY --chown=${USER_ID}:root ./fastcgan  ${WORK_HOME}/fastcgan
 

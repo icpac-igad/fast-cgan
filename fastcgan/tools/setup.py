@@ -30,7 +30,6 @@ from fastcgan.tools.config import (
     RedisCacheSettings,
     RedisQueueSettings,
     RedisRateLimiterSettings,
-    get_asset_dir_path,
     get_cached_file_base_path,
     settings,
 )
@@ -220,12 +219,6 @@ def create_application(
 
     if isinstance(settings, AssetPathSettings):
         if settings.ENVIRONMENT != EnvironmentOption.PRODUCTION:
-            # mount static files
-            application.mount(
-                settings.STATIC_BASE_URL,
-                StaticFiles(directory=get_asset_dir_path("static")),
-                name="static",
-            )
             # mount media files
             application.mount(
                 settings.CACHE_BASE_URL,

@@ -6,7 +6,6 @@ __pycache__
 *.json
 configs
 data
-jobs
 logs
 cache
 shapefiles

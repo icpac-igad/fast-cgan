@@ -27,7 +27,11 @@ async def get_mask_areas() -> list[settings.MaskArea]:
 
 @router.get("/color-styles", response_model=list[settings.VisualizationColorStyle])
 async def get_color_styles() -> list[settings.VisualizationColorStyle]:
-    return [settings.VisualizationColorStyle(name=color_style) for color_style in COLOR_SCHEMES]
+    return [
+        settings.VisualizationColorStyle(name=color_style)
+        for color_style in COLOR_SCHEMES
+        if color_style not in ["ICPAC_heavy", "EMI_heavy"]
+    ]
 
 
 @router.get("/locations", response_model=list[settings.MaskArea])

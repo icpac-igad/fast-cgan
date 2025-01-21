@@ -1,15 +1,15 @@
 services:
   redis:
     image: redis:alpine
-    container_name: cgan-redis
+    container_name: ${REDIS_CNTR_NAME:-cgan-redis}
     volumes:
       - ${REDIS_DATA_DIR:-./data/redis}:/data
     ports:
       - ${REDIS_CACHE_HOST:-172.17.0.1}:${REDIS_CACHE_PORT:-6379}:6379
 
-  web:
-    image: icpac/fast-cgan-api
-    container_name: cgan-api
+  api:
+    image: ${API_IMAGE_NAME:-icpac/fast-cgan-api}
+    container_name: ${API_CNTR_NAME:-cgan-api}
     build:
       context: .
       dockerfile: Dockerfile
@@ -41,14 +41,33 @@ services:
     depends_on:
       - redis
 
-  jobs:
-    image: ${JOBS_IMAGE_NAME:-icpac/sewaa-data-pipeline}
-    container_name: ${JOBS_CNTR_NAME:-data-pipelines}
+  open-ifs:
+    image: ${API_IMAGE_NAME:-icpac/fast-cgan-api}
+    container_name: ${OPEN_IFS_JOBS_CNTR_NAME:-open-ifs-jobs}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: ${RESTART_POLICY:-always}
+    command: ${OPEN_IFS_JOBS_CMD:-python fastcgan/jobs/manager.py -s 'open-ifs'}
+    environment:
+      - SECRET_KEY
+      - WORK_HOME=${WORK_HOME:-/opt/cgan}
+      - JOBS_DATA_DIR=${APP_JOBS_DATA_DIR:-/opt/cgan/jobs}
+      - FORECASTS_DATA_DIR=${APP_FORECASTS_DATA_DIR:-/opt/cgan/forecasts}
+      - LOGS_DIR=${APP_LOGS_DIR:-/opt/cgan/logs}
+    volumes:
+      - ${FORECASTS_DATA_DIR:-./data/forecasts}:${APP_FORECASTS_DATA_DIR:-/opt/cgan/forecasts}
+      - ${JOBS_DATA_DIR:-./data/jobs}:${APP_JOBS_DATA_DIR:-/opt/cgan/jobs}
+      - ${LOGS_DIR:-./data/logs}:${APP_LOGS_DIR:-/opt/cgan/logs}
+
+  jurre-brishti-ens:
+    image: ${JOBS_IMAGE_NAME:-icpac/cgan-jobs-pipeline}
+    container_name: ${JURRE_ENS_JOBS_CNTR_NAME:-jurre-brishti-ens-jobs}
     build:
       context: .
       dockerfile: ${JOBS_DOCKERFILE:-jobs.Dockerfile}
     restart: ${RESTART_POLICY:-always}
-    command: ${JOBS_CMD:-python fastcgan/jobs/manager.py}
+    command: ${JURRE_ENS_JOBS_CMD:-python fastcgan/jobs/manager.py -s 'jurre-brishti'}
     environment:
       - SECRET_KEY
       - WORK_HOME=${WORK_HOME:-/opt/cgan}
@@ -60,11 +79,39 @@ services:
       - IFS_PRIVATE_KEY=${IFS_PRIVATE_KEY:-/srv/ssl/private.key}
     volumes:
       - ${FORECASTS_DATA_DIR:-./data/forecasts}:${APP_FORECASTS_DATA_DIR:-/opt/cgan/forecasts}
-      - ${MODEL_CONFIG_DIR:-./data/model}:${WORK_HOME:-/opt/cgan}/model
       - ${JOBS_DATA_DIR:-./data/jobs}:${APP_JOBS_DATA_DIR:-/opt/cgan/jobs}
       - ${LOGS_DIR:-./data/logs}:${APP_LOGS_DIR:-/opt/cgan/logs}
+      - ${MODEL_CONFIG_DIR:-./data/model}:${WORK_HOME:-/opt/cgan}/model
       - ${CGAN_MAIN_CONFIG:-./configs/config.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/confg.yaml:ro
-      - ${CGAN_DATA_PATHS_CONFIG:-./configs/data_paths.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/data_paths.yaml:ro
-      - ${CGAN_FORECAST_CONFIG:-./configs/forecast.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/forecast.yaml:ro
       - ${CGAN_LOCAL_CONFIG:-./configs/local_config.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/local_config.yaml:ro
+      - ${JURRE_CGAN_DATA_PATHS_CONFIG:-./configs/jurre-brishti/data_paths.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/data_paths.yaml:ro
+      - ${JURRE_CGAN_FORECAST_CONFIG:-./configs/jurre-brishti/forecast-ens.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/forecast.yaml:ro
+      - ${IFS_SERVER_KEY:-./data/private/id_rsa.key}:${IFS_PRIVATE_KEY:-/srv/ssl/private.key}:ro
+
+  mvua-kubwa-ens:
+    image: ${JOBS_IMAGE_NAME:-icpac/cgan-jobs-pipeline}
+    container_name: ${MVUA_ENS_JOBS_CNTR_NAME:-mvua-kubwa-jobs}
+    build:
+      context: .
+      dockerfile: ${MVUA_ENS_JOBS_DOCKERFILE:-jobs.Dockerfile}
+    restart: ${RESTART_POLICY:-always}
+    command: ${MVUA_ENS_JOBS_CMD:-python fastcgan/jobs/manager.py -s 'mvua-kubwa'}
+    environment:
+      - SECRET_KEY
+      - WORK_HOME=${WORK_HOME:-/opt/cgan}
+      - JOBS_DATA_DIR=${APP_JOBS_DATA_DIR:-/opt/cgan/jobs}
+      - FORECASTS_DATA_DIR=${APP_FORECASTS_DATA_DIR:-/opt/cgan/forecasts}
+      - LOGS_DIR=${APP_LOGS_DIR:-/opt/cgan/logs}
+      - IFS_SERVER_HOST=${IFS_SERVER_HOST:-domain.example}
+      - IFS_SERVER_USER=${IFS_SERVER_USER:-username}
+      - IFS_PRIVATE_KEY=${IFS_PRIVATE_KEY:-/srv/ssl/private.key}
+    volumes:
+      - ${FORECASTS_DATA_DIR:-./data/forecasts}:${APP_FORECASTS_DATA_DIR:-/opt/cgan/forecasts}
+      - ${JOBS_DATA_DIR:-./data/jobs}:${APP_JOBS_DATA_DIR:-/opt/cgan/jobs}
+      - ${LOGS_DIR:-./data/logs}:${APP_LOGS_DIR:-/opt/cgan/logs}
+      - ${MODEL_CONFIG_DIR:-./data/model}:${WORK_HOME:-/opt/cgan}/model
+      - ${CGAN_MAIN_CONFIG:-./configs/config.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/confg.yaml:ro
+      - ${CGAN_LOCAL_CONFIG:-./configs/local_config.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/local_config.yaml:ro
+      - ${MVUA_CGAN_DATA_PATHS_CONFIG:-./configs/mvua-kubwa/data_paths.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/data_paths.yaml:ro
+      - ${MVUA_CGAN_FORECAST_CONFIG:-./configs/mvua-kubwa/forecast-ens.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/forecast.yaml:ro
       - ${IFS_SERVER_KEY:-./data/private/id_rsa.key}:${IFS_PRIVATE_KEY:-/srv/ssl/private.key}:ro
