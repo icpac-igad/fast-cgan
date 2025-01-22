@@ -19,8 +19,7 @@ async def get_forecast_dates(
     forecast: cgan_model_literal | None = GAN_MODELS[0]["name"],
 ) -> list[settings.ForecastDate]:
     data_dates = get_forecast_data_dates(
-        mask_region=COUNTRY_NAMES[0],
-        source=forecast,
+        source=f"{forecast}-count",
     )
     return [settings.ForecastDate(date=data_date) for data_date in data_dates]
 

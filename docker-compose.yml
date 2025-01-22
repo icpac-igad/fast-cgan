@@ -81,7 +81,7 @@ services:
       - ${FORECASTS_DATA_DIR:-./data/forecasts}:${APP_FORECASTS_DATA_DIR:-/opt/cgan/forecasts}
       - ${JOBS_DATA_DIR:-./data/jobs}:${APP_JOBS_DATA_DIR:-/opt/cgan/jobs}
       - ${LOGS_DIR:-./data/logs}:${APP_LOGS_DIR:-/opt/cgan/logs}
-      - ${MODEL_CONFIG_DIR:-./data/model}:${WORK_HOME:-/opt/cgan}/model
+      - ${MODEL_CONFIG_DIR:-./data/model}/jurre-brishti:${WORK_HOME:-/opt/cgan}/model
       - ${CGAN_MAIN_CONFIG:-./configs/config.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/confg.yaml:ro
       - ${CGAN_LOCAL_CONFIG:-./configs/local_config.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/local_config.yaml:ro
       - ${JURRE_CGAN_DATA_PATHS_CONFIG:-./configs/jurre-brishti/data_paths.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/data_paths.yaml:ro
@@ -109,7 +109,7 @@ services:
       - ${FORECASTS_DATA_DIR:-./data/forecasts}:${APP_FORECASTS_DATA_DIR:-/opt/cgan/forecasts}
       - ${JOBS_DATA_DIR:-./data/jobs}:${APP_JOBS_DATA_DIR:-/opt/cgan/jobs}
       - ${LOGS_DIR:-./data/logs}:${APP_LOGS_DIR:-/opt/cgan/logs}
-      - ${MODEL_CONFIG_DIR:-./data/model}:${WORK_HOME:-/opt/cgan}/model
+      - ${MODEL_CONFIG_DIR:-./data/model}/mvua-kubwa:${WORK_HOME:-/opt/cgan}/model
       - ${CGAN_MAIN_CONFIG:-./configs/config.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/confg.yaml:ro
       - ${CGAN_LOCAL_CONFIG:-./configs/local_config.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/local_config.yaml:ro
       - ${MVUA_CGAN_DATA_PATHS_CONFIG:-./configs/mvua-kubwa/data_paths.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/data_paths.yaml:ro

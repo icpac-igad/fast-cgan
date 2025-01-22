@@ -89,8 +89,8 @@ def get_directory_files(data_path: Path, files: set[Path] | None = set()) -> set
 
 
 def get_forecast_data_files(
-    mask_region: str,
     source: str,
+    mask_region: str | None = None,
 ) -> list[str]:
     if source in [model["name"] for model in GAN_MODELS]:
         source = f"{source}-ens"
@@ -108,13 +108,17 @@ def get_ecmwf_files_for_date(data_date: datetime, mask_region: str | None = COUN
 
 
 def get_forecast_data_dates(
-    mask_region: str,
     source: open_ifs_literal | cgan_ifs_literal | cgan_model_literal,
+    mask_region: str | None = None,
     strict: bool | None = True,
 ) -> list[str]:
     if source in [model["name"] for model in GAN_MODELS]:
         source = f"{source}-ens"
     data_files = get_forecast_data_files(source=source, mask_region=mask_region)
+    if "-count" in source:
+        data_dates = sorted({dfile.replace(".nc", "").split("_")[1] for dfile in data_files})
+        return reversed([datetime.strptime(data_date, "%Y%m%d").strftime("%b %d, %Y") for data_date in data_dates])
+
     data_dates = sorted({dfile.replace(".nc", "").split("-")[2].split("_")[0] for dfile in data_files})
     if not strict or source != "open-ifs":
         return list(

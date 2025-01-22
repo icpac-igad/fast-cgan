@@ -14,7 +14,7 @@ from show_forecasts.constants import COUNTRY_NAMES, DATA_PARAMS
 from show_forecasts.data_utils import get_region_extent
 
 from fastcgan.jobs.data_sync import run_ecmwf_ifs_sync, run_sftp_rsync
-from fastcgan.jobs.stubs import cgan_ifs_literal, cgan_model_literal, open_ifs_literal
+from fastcgan.jobs.stubs import cgan_ifs_literal, open_ifs_literal
 from fastcgan.jobs.utils import (
     data_sync_jobs_status,
     get_data_store_path,
@@ -239,34 +239,34 @@ def syncronize_open_ifs_forecast_data(
         set_data_sycn_status(source="open-ifs", status=0)
 
 
-def generate_cgan_forecasts(model: cgan_model_literal, mask_region: str | None = COUNTRY_NAMES[0]):
+def generate_cgan_forecasts(model: str, mask_region: str | None = COUNTRY_NAMES[0]):
     set_data_sycn_status(source=model, status=1)
-    ifs_dates = get_forecast_data_dates(mask_region=mask_region, source=model)
+    gbmc_source = "cgan-ifs-7d-ens" if model == "mvua-kubwa-ens" else "cgan-ifs-6h-ens"
+    ifs_dates = get_forecast_data_dates(mask_region=mask_region, source=gbmc_source)
     gan_dates = get_forecast_data_dates(mask_region=mask_region, source=model)
-    for ifs_date in ifs_dates:
-        if ifs_date not in gan_dates:
-            logger.info(f"generating {model} cGAN forecast for {ifs_date}")
-            # generate forecast for date
-            data_date = datetime.strptime(ifs_date, "%b %d, %Y")
-            gbmc_source = "cgan-ifs-7d-ens" if model == "mvua-kubwa-ens" else "cgan-ifs-6h-ens"
-            gbmc_filename = get_dataset_file_path(
-                source=gbmc_source,
-                data_date=data_date,
-                file_name=f"{data_date.strftime('%Y%m%d')}_00Z.nc",
-                mask_region=mask_region,
+    missing_dates = [data_date for data_date in ifs_dates if data_date not in gan_dates]
+    for missing_date in missing_dates:
+        logger.info(f"generating {model} cGAN forecast for {missing_date}")
+        # generate forecast for date
+        data_date = datetime.strptime(missing_date, "%b %d, %Y")
+        gbmc_filename = get_dataset_file_path(
+            source=gbmc_source,
+            data_date=data_date,
+            file_name=f"{data_date.strftime('%Y%m%d')}_00Z.nc",
+            mask_region=mask_region,
+        )
+        store_path = get_data_store_path(source=gbmc_source, mask_region=mask_region)
+        try:
+            subprocess.call(
+                shell=True,
+                cwd=f'{getenv("WORK_HOME","/opt/cgan")}/ensemble-cgan/dsrnngan',
+                args=f"python test_forecast.py -f {str(gbmc_filename).replace(f'{store_path}/', '')}",
             )
-            store_path = get_data_store_path(source=gbmc_source, mask_region=mask_region)
-            try:
-                subprocess.call(
-                    shell=True,
-                    cwd=f'{getenv("WORK_HOME","/opt/cgan")}/ensemble-cgan/dsrnngan',
-                    args=f"python test_forecast.py -f {str(gbmc_filename).replace(f'{store_path}/', '')}",
-                )
-            except Exception as error:
-                logger.error(f"failed to generate cGAN forecast for {ifs_date} with error {error}")
-            else:
-                cgan_file_path = get_data_store_path(source="jobs") / model / f"GAN_{data_date.strftime('%Y%m%d')}.nc"
-                save_to_new_filesystem_structure(file_path=cgan_file_path, source=model, part_to_replace="GAN_")
+        except Exception as error:
+            logger.error(f"failed to generate {model} cGAN forecast for {missing_date} with error {error}")
+        else:
+            cgan_file_path = get_data_store_path(source="jobs") / model / f"GAN_{data_date.strftime('%Y%m%d')}.nc"
+            save_to_new_filesystem_structure(file_path=cgan_file_path, source=model, part_to_replace="GAN_")
     set_data_sycn_status(source=model, status=0)
 
 
@@ -304,12 +304,12 @@ def syncronize_post_processed_ifs_data(model: cgan_ifs_literal, mask_region: str
         # set data syncronization status
         set_data_sycn_status(source=model, status=1)
         gan_dates = get_forecast_data_dates(mask_region=mask_region, source=model)
-        gan_dates = [getenv("GAN_SYNC_START_DATE", "Jan 01, 2024")] if not len(gan_dates) else gan_dates
-        final_data_date = datetime.strptime(gan_dates[0].lower(), "%b %d, %Y")
-        delta = datetime.now() - final_data_date
-        logger.debug(
-            f"syncronizing {model} cGAN data for the period {final_data_date.date()} to {datetime.now().date()}"
-        )
+        sync_start_date = datetime.strptime(getenv("GAN_SYNC_START_DATE", "Jan 01, 2024").lower(), "%b %d, %Y")
+        delta = datetime.now() - sync_start_date
+        # TODO: query list of available data dates of sftp source. use the info to generate data dates range.
+        dates_range = [(sync_start_date + timedelta(days=i)).strftime("%b %d, %Y") for i in range(delta.days + 1)]
+        missing_dates = [data_date for data_date in dates_range if data_date not in gan_dates]
+        logger.debug(f"syncronizing {model} cGAN data for the period {missing_dates[0]} to {missing_dates[-1]}")
 
         ifs_host = getenv("IFS_SERVER_HOST", "domain.example")
         ifs_user = getenv("IFS_SERVER_USER", "username")
@@ -320,7 +320,6 @@ def syncronize_post_processed_ifs_data(model: cgan_ifs_literal, mask_region: str
 
         if not dest_dir.exists():
             dest_dir.mkdir(parents=True)
-        data_dates = [(final_data_date + timedelta(days=i)).strftime("%Y%m%d") for i in range(delta.days + 1)]
         with concurrent.futures.ThreadPoolExecutor(max_workers=cpu_count() * 4) as executor:
             results = [
                 executor.submit(
@@ -330,7 +329,9 @@ def syncronize_post_processed_ifs_data(model: cgan_ifs_literal, mask_region: str
                     source_dir=src_dir,
                     dest_dir=str(dest_dir),
                 )
-                for data_date in data_dates
+                for data_date in [
+                    datetime.strptime(missing_date, "%b %d, %Y").strftime("%Y%m%d") for missing_date in missing_dates
+                ]
             ]
 
             for future in concurrent.futures.as_completed(results):
