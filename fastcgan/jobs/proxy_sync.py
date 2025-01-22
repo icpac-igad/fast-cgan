@@ -54,7 +54,7 @@ def retrieve_cgan_data_links(
 
 
 def download_ens_dataset(source: str, year: str, month: str, day: str, start_time: str, valid_time: str):
-    data_dir = get_data_store_path(source=source)
+    data_dir = get_data_store_path(source=f"{source}-count")
     model_path = "Jurre_brishti_counts" if source == "jurre-brishti" else "Mvua_kubwa_counts"
     dwnld_link = (
         f"http://megacorr.dynu.net/ICPAC/cGAN_examplePlots/data/{model_path}/{year}"
