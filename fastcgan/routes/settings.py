@@ -1,7 +1,8 @@
+from typing import Literal
+
 from fastapi import APIRouter
 from show_forecasts.constants import COLOR_SCHEMES, COUNTRY_NAMES
 
-from fastcgan.jobs.stubs import cgan_model_literal
 from fastcgan.jobs.utils import get_forecast_data_dates, get_locations_data_for_region
 from fastcgan.models import settings
 from fastcgan.tools.constants import GAN_MODELS
@@ -16,10 +17,10 @@ async def get_gan_forecast_models() -> list[settings.ForecastModel]:
 
 @router.get("/data-dates", response_model=list[settings.ForecastDate])
 async def get_forecast_dates(
-    forecast: cgan_model_literal | None = GAN_MODELS[0]["name"],
+    model: Literal["jurre-brishti", "mvua-kubwa", "open-ifs"] | None = "jurre-brishti",
 ) -> list[settings.ForecastDate]:
     data_dates = get_forecast_data_dates(
-        source=f"{forecast}-count",
+        source=model if model == "open-ifs" else f"{model}-count",
     )
     return [settings.ForecastDate(date=data_date) for data_date in data_dates]
 
