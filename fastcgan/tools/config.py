@@ -135,8 +135,10 @@ def get_asset_dir_path(asset: Literal["cache"]) -> Path:
     return asset_path
 
 
-def get_cached_file_base_path(file_type: Literal["media", "data"] | None = "media") -> Path:
+def get_cached_file_base_path(file_type: Literal["media", "data"] | None = "media", source: str | None = None) -> Path:
     cache_path = get_asset_dir_path("cache") / file_type
+    if source is not None:
+        cache_path = cache_path / source
     if not cache_path.exists():
         cache_path.mkdir(parents=True)
     return cache_path

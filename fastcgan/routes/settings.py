@@ -21,7 +21,7 @@ async def get_forecast_dates(
 ) -> list[settings.ForecastDate]:
     data_dates = get_forecast_data_dates(
         source=model if model == "open-ifs" else f"{model}-count",
-    )
+    )[:-1]
     return [settings.ForecastDate(date=data_date) for data_date in data_dates]
 
 

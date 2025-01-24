@@ -1,12 +1,11 @@
 from argparse import ArgumentParser
-from pathlib import Path
 from typing import Any, Literal
 
 import requests
 from bs4 import BeautifulSoup
 from loguru import logger
 
-from fastcgan.jobs.utils import get_data_store_path, get_directory_files
+from fastcgan.jobs.utils import get_data_store_path
 
 
 def crawl_http_dataset_links(data_page: str) -> list[str]:
@@ -162,13 +161,6 @@ def sync_data_source(
 
                 except Exception as e:
                     logger.error(f"Error *{e}*")
-
-
-def rename_gbmc_files():
-    data_dir = get_data_store_path(source="cgan-ifs-6h-ens")
-    for data_file in get_directory_files(data_path=data_dir, files=set()):
-        new_path = Path(str(data_file).replace("cgan_ifs", "cgan_ifs_6h_ens").replace("gbmc_ifs", "cgan_ifs_6h_ens"))
-        data_file.rename(new_path)
 
 
 data_source_options = "cgan-forecast,mvua-kubwa,jurre-brishti,cgan-ifs,open-ifs"

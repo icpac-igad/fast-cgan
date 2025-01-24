@@ -27,7 +27,7 @@ async def get_forecast_maps_path(
 ) -> list[Path]:
     data_date_str = data_date.strftime("%Y_%m_%d")
     fname_str = (
-        f"{source}-forecast-{vis_param.value.lower().replace(' ','_')}-{plot_units.value.replace('/','_')}"
+        f"{source.reolace('-','_')}_ens-{vis_param.value.lower().replace(' ','_')}-{plot_units.value.replace('/','_')}"
         + f"-{data_date_str}-{mask_area.lower().replace(' ','_')}-{color_style.lower()}"
     )
     if ensemble:
@@ -39,15 +39,16 @@ async def get_forecast_maps_path(
     if threshold is not None:
         fname_str += f"-chance_threshold_{threshold:.2f}".replace(".", "_")
     if start_time is None:
-        return [get_cached_file_base_path() / f"{fname_str}.{extension}"]
+        return [get_cached_file_base_path(source=source) / f"{fname_str}.{extension}"]
     if start_time.value == "all":
         start_hours = ["06", "12", "18", "00"]
         maps_paths = [
-            get_cached_file_base_path() / f"{fname_str}_{start_hour}.{extension}" for start_hour in start_hours
+            get_cached_file_base_path(source=source) / f"{fname_str}_{start_hour}.{extension}"
+            for start_hour in start_hours
         ]
-        maps_paths.append(get_cached_file_base_path() / f"{fname_str}.{extension}")
+        maps_paths.append(get_cached_file_base_path(source=source) / f"{fname_str}.{extension}")
         return maps_paths
-    return [get_cached_file_base_path() / f"{fname_str}_{start_time.value.rjust(2, '0')}.{extension}"]
+    return [get_cached_file_base_path(source=source) / f"{fname_str}_{start_time.value.rjust(2, '0')}.{extension}"]
 
 
 async def get_local_histogram_chart(

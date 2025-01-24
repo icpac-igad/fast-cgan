@@ -1,8 +1,6 @@
-from datetime import date, datetime
-from os import getenv
+from datetime import date
 from pathlib import Path
 
-import sysrsync
 from ecmwf.opendata import Client
 from ecmwf.opendata.client import Result
 from loguru import logger
@@ -13,40 +11,6 @@ from fastcgan.jobs.utils import (
     get_dataset_file_path,
     get_relevant_forecast_steps,
 )
-
-
-def run_sftp_rsync(
-    data_date: str,
-    source_ssh: str,
-    source_dir: str,
-    dest_dir: str,
-    private_key: str | None = getenv("IFS_PRIVATE_KEY", "/srv/ssl/private.key"),
-    rsync_opts: list[str] | None = ["-a", "-v", "-P"],
-    verbose: bool | None = False,
-):
-    logger.info(
-        f"starting post processed IFS forecast data syncronization for {datetime.strptime(data_date, '%Y%m%d').date()}"
-    )
-
-    ifs_filename = f"IFS_{data_date}_00Z.nc"
-    logger.info(f"starting syncronization of IFS forecast data file {ifs_filename}")
-    try:
-        sysrsync.run(
-            source=f"{source_dir}/{ifs_filename}",
-            destination=dest_dir,
-            source_ssh=source_ssh,
-            private_key=private_key,
-            options=rsync_opts,
-            verbose=verbose,
-            sync_source_contents=False,
-            strict_host_key_checking=False,
-        )
-    except Exception as error:
-        logger.error(f"failed to syncronize gbmc ifs {ifs_filename} with error {error}")
-        return None
-    else:
-        logger.debug(f"successfully syncronized gbmc IFS forecast file {ifs_filename}")
-        return ifs_filename
 
 
 def try_data_download(

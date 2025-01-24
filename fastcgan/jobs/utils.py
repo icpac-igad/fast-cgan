@@ -61,7 +61,10 @@ def get_data_store_path(
 
 
 def get_dataset_file_path(
-    source: str, data_date: datetime | date, file_name: str, mask_region: str | None = None
+    source: str,
+    data_date: datetime | date,
+    file_name: str,
+    mask_region: str | None = None,
 ) -> Path:
     store_path = (
         get_data_store_path(source=source, mask_region=mask_region)
@@ -139,6 +142,30 @@ def get_forecast_data_dates(
     return [data_date.strftime("%b %d, %Y") for data_date in reversed(tmp_dates)]
 
 
+def get_gan_forecast_dates(
+    source: str,
+    mask_region: str | None = COUNTRY_NAMES[0],
+):
+    store_path = get_data_store_path(source=source, mask_region=mask_region)
+    data_files = get_directory_files(data_path=store_path, files=set())
+    return list({dfile.name.replace("Z.nc", "").split("-")[2] for dfile in data_files})
+
+
+def get_gan_forecast_initializations(
+    source: str,
+    mask_region: str | None = COUNTRY_NAMES[0],
+) -> dict[str, list[str]]:
+    init_dates = {}
+    for data_date in reversed(get_gan_forecast_dates(source=source, mask_region=mask_region)):
+        date_str, init_time = data_date.split("_")
+        if date_str in init_dates.keys():
+            init_dates[date_str] = init_dates[date_str].append(init_time)
+        else:
+            init_dates[date_str] = [init_time]
+    # output {YYYYMMMDD: [init_time]}
+    return init_dates
+
+
 def standardize_dataset(d: xr.DataArray | xr.Dataset):
     if "x" in d.dims and "y" in d.dims:
         d = d.rename({"x": "longitude", "y": "longitude"})
@@ -162,9 +189,11 @@ def slice_dataset_by_bbox(ds: xr.Dataset, bbox: list[float]):
 
 
 def save_to_new_filesystem_structure(
-    file_path: Path, source: cgan_model_literal | cgan_ifs_literal, part_to_replace: str | None = None
+    file_path: Path,
+    source: cgan_model_literal | cgan_ifs_literal,
+    mask_region: str | None = COUNTRY_NAMES[0],
+    part_to_replace: str | None = None,
 ) -> None:
-    mask_region = os.getenv("DEFAULT_MASK", COUNTRY_NAMES[0])
     logger.debug(f"received filesystem migration task for - {mask_region}- {source} - {file_path}")
     set_data_sycn_status(source=source, status=1)
     try:
@@ -176,6 +205,7 @@ def save_to_new_filesystem_structure(
         logger.error(f"failed to read {source} data file {file_path} with error")
     else:
         fname = file_path.name.replace(part_to_replace, "")
+        # TODO: complete the logic
         data_date = datetime.strptime(
             fname.replace(".nc", "").split("-")[0].split("_")[0].replace("000000", ""),
             "%Y%m%d",
@@ -239,7 +269,10 @@ def migrate_files(source: str):
         save_to_new_filesystem_structure(file_path=dfile, source=source, part_to_replace=part_to_replace)
 
 
-def set_data_sycn_status(source: cgan_model_literal | cgan_ifs_literal | open_ifs_literal, status: int | None = 1):
+def set_data_sycn_status(
+    source: cgan_model_literal | cgan_ifs_literal | open_ifs_literal,
+    status: int | None = 1,
+):
     status_file = Path(os.getenv("LOGS_DIR", "./")) / "data-sync-tasks-status.json"
     if not status_file.exists():
         with open(status_file, "w") as sf:
@@ -254,7 +287,9 @@ def set_data_sycn_status(source: cgan_model_literal | cgan_ifs_literal | open_if
             sf.write(json.dumps(data))
 
 
-def get_data_sycn_status(source: cgan_model_literal | cgan_ifs_literal | open_ifs_literal) -> int:
+def get_data_sycn_status(
+    source: cgan_model_literal | cgan_ifs_literal | open_ifs_literal,
+) -> int:
     status_file = Path(os.getenv("LOGS_DIR", "./")) / "data-sync-tasks-status.json"
 
     if not status_file.exists():

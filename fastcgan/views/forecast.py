@@ -154,7 +154,9 @@ async def cgan_forecast(
     if not all(maps_exist if len(maps_path) == 1 else maps_exist[:-1]):
         data_store = get_data_store_path(source=model)
         data = load_GAN_forecast(
-            forecast_init_date=data_date_obj,
+            model=model,
+            init_date=data_date_obj,
+            init_time=start_time.value.rjust(2, "0"),
             data_dir=str(data_store),
             mask_region=mask_area,
             cgan_ui_fs=True,
@@ -203,7 +205,9 @@ async def cgan_forecast_ensemble(
     if not maps_path[0].exists():
         data_store = get_data_store_path(source=model)
         data = load_GAN_forecast(
-            forecast_init_date=data_date_obj,
+            model=model,
+            init_date=data_date_obj,
+            init_time=start_time.value.rjust(2, "0"),
             data_dir=str(data_store),
             mask_region=mask_area,
             cgan_ui_fs=True,
@@ -251,7 +255,9 @@ async def cgan_threshold_chance(
     if not maps_path[0].exists():
         data_store = get_data_store_path(source=model)
         data = load_GAN_forecast(
-            forecast_init_date=data_date_obj,
+            model=model,
+            init_date=data_date_obj,
+            init_time=start_time.value.rjust(2, "0"),
             data_dir=str(data_store),
             mask_region=mask_area,
             cgan_ui_fs=True,
@@ -318,7 +324,8 @@ async def cgan_local_histogram(
         if not hist_path.exists():
             data_store = get_data_store_path(source=model)
             data = load_GAN_forecast(
-                forecast_init_date=data_date_obj,
+                model=model,
+                init_date=data_date_obj,
                 data_dir=str(data_store),
                 mask_region=mask_area,
                 cgan_ui_fs=True,
