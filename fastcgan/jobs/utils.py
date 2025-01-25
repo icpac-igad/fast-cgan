@@ -201,15 +201,12 @@ def save_to_new_filesystem_structure(
             standardize_dataset(xr.open_dataset(file_path, decode_times=False)),
             get_region_extent(shape_name=mask_region),
         )
-    except Exception:
-        logger.error(f"failed to read {source} data file {file_path} with error")
+    except Exception as err:
+        logger.error(f"failed to read {source} data file {file_path} with error {err}")
+        file_path.unlink()
     else:
         fname = file_path.name.replace(part_to_replace, "")
-        # TODO: complete the logic
-        data_date = datetime.strptime(
-            fname.replace(".nc", "").split("-")[0].split("_")[0].replace("000000", ""),
-            "%Y%m%d",
-        )
+        data_date = datetime.strptime(fname.replace("Z.nc", ""), "%Y%m%d_%H")
         target_file = get_dataset_file_path(
             source=source,
             data_date=data_date,

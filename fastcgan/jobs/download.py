@@ -93,6 +93,7 @@ def post_process_ecmwf_grib2_dataset(
                 break
         if ds is None:
             logger.error(f"failed to read {grib2_file} after {re_try_times} unsuccessful trials")
+            grib2_file.unlink()
         else:
             try:
                 ds.chunk().to_netcdf(nc_file, mode="w", format="NETCDF4", engine="netcdf4")
@@ -274,7 +275,7 @@ def generate_cgan_forecasts(model: str, mask_region: str | None = COUNTRY_NAMES[
         except Exception as error:
             logger.error(f"failed to generate {model} cGAN forecast for {missing_date} with error {error}")
         else:
-            cgan_file_path = get_data_store_path(source="jobs") / model / f"GAN_{data_date.strftime('%Y%m%d')}.nc"
+            cgan_file_path = get_data_store_path(source="jobs") / model / f"GAN_{date_str}_{init_time}Z.nc"
             save_to_new_filesystem_structure(file_path=cgan_file_path, source=model, part_to_replace="GAN_")
     set_data_sycn_status(source=model, status=0)
 
