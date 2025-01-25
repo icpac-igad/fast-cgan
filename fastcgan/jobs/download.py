@@ -266,11 +266,13 @@ def generate_cgan_forecasts(model: str, mask_region: str | None = COUNTRY_NAMES[
             mask_region=mask_region,
         )
         store_path = get_data_store_path(source=gbmc_source, mask_region=mask_region)
+        gan_ifs = str(gbmc_filename).replace(f"{store_path}/", "")
+        logger.debug(f"starting {model} forecast generation with IFS file {gan_ifs}")
         try:
             subprocess.call(
                 shell=True,
                 cwd=f'{getenv("WORK_HOME","/opt/cgan")}/ensemble-cgan/dsrnngan',
-                args=f"python test_forecast.py -f {str(gbmc_filename).replace(f'{store_path}/', '')}",
+                args=f"python test_forecast.py -f {gan_ifs}",
             )
         except Exception as error:
             logger.error(f"failed to generate {model} cGAN forecast for {missing_date} with error {error}")

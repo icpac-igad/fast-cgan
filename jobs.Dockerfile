@@ -24,7 +24,7 @@ ARG GROUP_ID=1000
 ARG USER_NAME=job
 ARG WORK_HOME=/opt/cgan
 ARG GAN_REPO=https://github.com/jaysnm/ensemble-cgan.git
-ARG GAN_BRANCH=main
+ARG GAN_BRANCH=Jurre_brishti
 
 # install system libraries
 RUN apt-get update -y && \

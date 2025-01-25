@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "fastcgan"
-version = "0.1.0"
+version = "0.2.0"
 description = "cGAN forecasting system back-end API developed using FastAPI"
 authors = ["Jason Kinyua <jaysnmury@gmail.com>"]
 license = "CC BY 4.0"
