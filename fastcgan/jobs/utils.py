@@ -203,7 +203,7 @@ def save_to_new_filesystem_structure(
         )
     except Exception as err:
         logger.error(f"failed to read {source} data file {file_path} with error {err}")
-        file_path.unlink()
+        file_path.unlink(missing_ok=True)
     else:
         fname = file_path.name.replace(part_to_replace, "")
         data_date = datetime.strptime(fname.replace("Z.nc", ""), "%Y%m%d_%H")

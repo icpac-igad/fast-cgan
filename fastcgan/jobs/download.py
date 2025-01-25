@@ -83,7 +83,7 @@ def post_process_ecmwf_grib2_dataset(
     grib2_size = 0 if not grib2_file.exists() else grib2_file.stat().st_size / (1024 * 1024)
     # remove grib2 file if its size is less than the required size
     if grib2_size < min_grib2_size:
-        grib2_file.unlink()
+        grib2_file.unlink(missing_ok=True)
     elif not nc_file.exists() or force_process:
         logger.info(f"post-processing ECMWF open IFS forecast data file {grib2_file_name}")
         ds = None
@@ -93,7 +93,7 @@ def post_process_ecmwf_grib2_dataset(
                 break
         if ds is None:
             logger.error(f"failed to read {grib2_file} after {re_try_times} unsuccessful trials")
-            grib2_file.unlink()
+            grib2_file.unlink(missing_ok=True)
         else:
             try:
                 ds.chunk().to_netcdf(nc_file, mode="w", format="NETCDF4", engine="netcdf4")
@@ -301,7 +301,7 @@ def post_process_downloaded_cgan_ifs(model: cgan_ifs_literal):
                     )
                 # purge invalid files
                 for file_path in downloads_path.iterdir():
-                    file_path.unlink()
+                    file_path.unlink(missing_ok=True)
             # break the loop
             break
         # sleep for 10 minutes
