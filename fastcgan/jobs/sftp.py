@@ -92,7 +92,7 @@ def sync_sftp_data_files(
     data_dates = [remote_file.replace("IFS_", "").replace("Z.nc", "") for remote_file in remote_files]
     ifs_dates = get_gan_forecast_dates(source=model)
     to_sync = [f"IFS_{data_date}Z.nc" for data_date in data_dates if data_date not in ifs_dates]
-    logger.debug(f"processing sftp data synscronization for {len(to_sync)} {model} source files")
+    logger.debug(f"processing sftp data syncronization for {len(to_sync)} {model} source files")
     synced_files = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=cpu_count() * 4) as executor:
         results = [

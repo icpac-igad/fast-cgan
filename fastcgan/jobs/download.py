@@ -204,7 +204,7 @@ def syncronize_open_ifs_forecast_data(
         + f"{dt_fx} with time steps {start_step} to {final_step} and {dateback} days back"
     )
 
-    if not data_sync_jobs_status():
+    if not get_data_sycn_status(source="open-ifs"):
         mask_region = getenv("DEFAULT_MASK", COUNTRY_NAMES[0])
         logger.info(
             f"starting open-ifs forecast data syncronization for {mask_region} at "
