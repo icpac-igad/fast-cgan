@@ -66,6 +66,9 @@ services:
     build:
       context: .
       dockerfile: ${JOBS_DOCKERFILE:-jobs.Dockerfile}
+      args:
+        - GAN_BRANCH=Jurre_brishti
+        - PYTHON_VERSION=3.10
     restart: ${RESTART_POLICY:-always}
     command: ${JURRE_ENS_JOBS_CMD:-python fastcgan/jobs/manager.py -s 'jurre-brishti'}
     environment:
@@ -94,6 +97,9 @@ services:
     build:
       context: .
       dockerfile: ${MVUA_ENS_JOBS_DOCKERFILE:-jobs.Dockerfile}
+      args:
+        - GAN_BRANCH=Mvua_kubwa
+        - PYTHON_VERSION=3.10
     restart: ${RESTART_POLICY:-always}
     command: ${MVUA_ENS_JOBS_CMD:-python fastcgan/jobs/manager.py -s 'mvua-kubwa'}
     environment:
