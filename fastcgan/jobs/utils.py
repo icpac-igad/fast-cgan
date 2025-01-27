@@ -120,7 +120,9 @@ def get_forecast_data_dates(
     data_files = get_forecast_data_files(source=source, mask_region=mask_region)
     if "-count" in source:
         data_dates = sorted({dfile.replace(".nc", "").split("_")[1] for dfile in data_files})
-        return reversed([datetime.strptime(data_date, "%Y%m%d").strftime("%b %d, %Y") for data_date in data_dates])
+        return list(
+            reversed([datetime.strptime(data_date, "%Y%m%d").strftime("%b %d, %Y") for data_date in data_dates])
+        )
 
     data_dates = sorted({dfile.replace(".nc", "").split("-")[2].split("_")[0] for dfile in data_files})
     if not strict or source != "open-ifs":
