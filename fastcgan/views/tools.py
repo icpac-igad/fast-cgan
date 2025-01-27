@@ -27,7 +27,7 @@ async def get_forecast_maps_path(
 ) -> list[Path]:
     data_date_str = data_date.strftime("%Y_%m_%d")
     fname_str = (
-        f"{source.reolace('-','_')}_ens-{vis_param.value.lower().replace(' ','_')}-{plot_units.value.replace('/','_')}"
+        f"{source.replace('-','_')}_ens-{vis_param.value.lower().replace(' ','_')}-{plot_units.value.replace('/','_')}"
         + f"-{data_date_str}-{mask_area.lower().replace(' ','_')}-{color_style.lower()}"
     )
     if ensemble:
