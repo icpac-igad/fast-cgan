@@ -5,7 +5,7 @@ from pathlib import Path
 
 LOG_DIR = Path(os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs"))
 if not LOG_DIR.exists():
-    os.makedirs(LOG_DIR)
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 LOG_FILE_PATH = os.path.join(LOG_DIR, "app.log")
 
