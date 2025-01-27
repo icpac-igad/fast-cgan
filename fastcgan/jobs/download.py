@@ -38,7 +38,7 @@ def read_dataset(file_path: str | Path, mask_area: str | None = COUNTRY_NAMES[0]
     except Exception as err:
         logger.error(f"failed to read {file_path} dataset file with error {err}")
         return None
-    if type(ds) is list:
+    if isinstance(ds, list):
         arrays = []
         for i in range(len(ds)):
             if "number" in ds[i].dims:
@@ -88,7 +88,7 @@ def post_process_ecmwf_grib2_dataset(
         logger.info(f"post-processing ECMWF open IFS forecast data file {grib2_file_name}")
         ds = None
         for _ in range(re_try_times):
-            ds = read_dataset(str(grib2_file))
+            ds = read_dataset(grib2_file)
             if ds is not None:
                 break
         if ds is None:
@@ -96,7 +96,7 @@ def post_process_ecmwf_grib2_dataset(
             grib2_file.unlink(missing_ok=True)
         else:
             try:
-                ds.chunk().to_netcdf(nc_file, mode="w", format="NETCDF4", engine="netcdf4")
+                ds.to_netcdf(nc_file, mode="w", format="NETCDF4", engine="netcdf4")
             except Exception as error:
                 logger.error(f"failed to save {source} open ifs dataset slice for {mask_region} with error {error}")
             else:
@@ -112,7 +112,7 @@ def post_process_ecmwf_grib2_dataset(
                         )
                         logger.debug(f"saving {source} open ifs dataset slice for {country_name} into {slice_file}")
                         try:
-                            sliced.chunk().to_netcdf(
+                            sliced.to_netcdf(
                                 path=slice_file,
                                 mode="w",
                                 format="NETCDF4",
