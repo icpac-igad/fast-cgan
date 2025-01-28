@@ -26,8 +26,14 @@ def get_sftp_session(
 
     hostname = host if host is not None else getenv("IFS_SERVER_HOST", "domain.example")
     username = user if user is not None else getenv("IFS_SERVER_USER", "username")
-    private_key = key_file if key_file is not None else getenv("IFS_PRIVATE_KEY", "/srv/ssl/private.key")
-    assert f"{username}@{hostname}" != "username@domain.example", "you must specify IFS data source server address"
+    private_key = (
+        key_file
+        if key_file is not None
+        else getenv("IFS_PRIVATE_KEY", "/srv/ssl/private.key")
+    )
+    assert (
+        f"{username}@{hostname}" != "username@domain.example"
+    ), "you must specify IFS data source server address"
     while retry_count != max_retry:
         try:
             client.connect(
@@ -60,12 +66,19 @@ def fetch_remote_file(
         return None
     logger.debug(f"successfully opened sftp transfer tunnel for {file_name}")
     try:
-        logger.debug(f"fetching data contents for {remote_path} and saving into {local_path}")
+        logger.debug(
+            f"fetching data contents for {remote_path} and saving into {local_path}"
+        )
         # stream data and save on disk for ingestion
         sftp.get(remotepath=remote_path, localpath=local_path)
     except Exception as err:
-        logger.error(f"failed to fetch sftp file from path {remote_path} with error {err}")
+        logger.error(
+            f"failed to fetch sftp file from path {remote_path} with error {err}"
+        )
         return None
+    logger.info(
+        f"successfully downloaded data file {remote_path} and saved into {local_path}"
+    )
     return file_name
 
 
@@ -89,10 +102,17 @@ def sync_sftp_data_files(
     # list files in the target remote directory
     remote_files = sftp.listdir(path=src_dir)
     # compare with local filesystem to determine files to be synced
-    data_dates = [remote_file.replace("IFS_", "").replace("Z.nc", "") for remote_file in remote_files]
+    data_dates = [
+        remote_file.replace("IFS_", "").replace("Z.nc", "")
+        for remote_file in remote_files
+    ]
     ifs_dates = get_gan_forecast_dates(source=model)
-    to_sync = [f"IFS_{data_date}Z.nc" for data_date in data_dates if data_date not in ifs_dates]
-    logger.debug(f"processing sftp data syncronization for {len(to_sync)} {model} source files")
+    to_sync = [
+        f"IFS_{data_date}Z.nc" for data_date in data_dates if data_date not in ifs_dates
+    ]
+    logger.debug(
+        f"processing sftp data syncronization for {len(to_sync)} {model} source files"
+    )
     synced_files = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=cpu_count() * 4) as executor:
         results = [
