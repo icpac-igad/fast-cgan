@@ -63,6 +63,28 @@ def read_dataset(
         return None
 
 
+def clean_grib2_index_files(source: str | None = "open-ifs"):
+    # remove idx files from the disk
+    downloads_path = get_data_store_path(source="jobs") / source
+    idx_files = [
+        idxf for idxf in downloads_path.iterdir() if idxf.name.endswith(".idx")
+    ]
+    logger.info(
+        f"cleaning up grib2 index files {' -> '.join([idxf.name for idxf in idx_files])}"
+    )
+    for idx_file in idx_files:
+        for _ in range(10):
+            try:
+                idx_file.unlink()
+            except Exception:
+                sleep(5)
+                pass
+            else:
+                break
+        if idx_file.exists():
+            logger.error(f"failed to delete grib2 index file {idx_file}")
+
+
 def post_process_ecmwf_grib2_dataset(
     grib2_file_name: str,
     source: open_ifs_literal | None = "open-ifs",
@@ -74,6 +96,7 @@ def post_process_ecmwf_grib2_dataset(
     min_grib2_size: float | None = 4.5 * 1024,
 ) -> None:
     logger.info(f"executing post-processing task for {grib2_file_name}")
+    clean_grib2_index_files()
     data_date = datetime.strptime(grib2_file_name.split("-")[0], "%Y%m%d%H%M%S")
     downloads_path = get_data_store_path(source="jobs") / source
     grib2_file = downloads_path / grib2_file_name
