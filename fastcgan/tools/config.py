@@ -14,9 +14,7 @@ config = Config(env_path)
 
 
 class AppSettings(BaseSettings):
-    APP_NAME: str = config(
-        "APP_NAME", default="Weather and Climate Forecast Systems API"
-    )
+    APP_NAME: str = config("APP_NAME", default="Weather and Climate Forecast Systems API")
     APP_DESCRIPTION: str | None = config(
         "APP_DESCRIPTION",
         default="API gateway for the Strengthening Early Warning Systems for Anticipatory Action (SEWAA) Project",
@@ -24,12 +22,8 @@ class AppSettings(BaseSettings):
     APP_VERSION: str | None = config("APP_VERSION", default="0.1")
     APP_BASE_URL: str | None = config("BASE_URL", default="http://127.0.0.1:8000")
     APP_SUBPATH: str | None = config("SUB_PATH", default="")
-    APP_DUMPS_DIR: str | None = os.path.expandvars(
-        config("DUMPS_DIR", default=os.path.join(base_dir, "dumps"))
-    )
-    ALLOWED_ORIGINS: str | None = config(
-        "ALLOWED_ORIGINS", default="https://cgan.icpac.net,http://localhost:5173"
-    )
+    APP_DUMPS_DIR: str | None = os.path.expandvars(config("DUMPS_DIR", default=os.path.join(base_dir, "dumps")))
+    ALLOWED_ORIGINS: str | None = config("ALLOWED_ORIGINS", default="https://cgan.icpac.net,http://localhost:5173")
     LICENSE_NAME: str | None = config("LICENSE", default="CC BY 4.0")
     CONTACT_NAME: str | None = config("CONTACT_NAME", default="Developer")
     CONTACT_EMAIL: str | None = config("CONTACT_EMAIL", default="developer@icpac.net")
@@ -38,23 +32,17 @@ class AppSettings(BaseSettings):
 
 
 class AssetPathSettings(BaseSettings):
-    CACHE_FILES_DIR: str | None = os.path.expandvars(
-        config("CACHE_DIR", default=os.path.join(base_dir, "cache"))
-    )
+    CACHE_FILES_DIR: str | None = os.path.expandvars(config("CACHE_DIR", default=os.path.join(base_dir, "cache")))
     FORECASTS_DATA_DIR: str | None = os.path.expandvars(
         config("FORECASTS_DATA_DIR", default=os.path.join(base_dir, "./data"))
     )
-    JOBS_DATA_DIR: str | None = os.path.expandvars(
-        config("JOBS_DATA_DIR", default=os.path.join(base_dir, "./jobs"))
-    )
+    JOBS_DATA_DIR: str | None = os.path.expandvars(config("JOBS_DATA_DIR", default=os.path.join(base_dir, "./jobs")))
     ASSETS_DIR_MAP: dict[str, str] = {
         "cache": CACHE_FILES_DIR,
         "jobs": JOBS_DATA_DIR,
         "forecasts": FORECASTS_DATA_DIR,
     }
-    CACHE_BASE_URL: str | None = os.path.expandvars(
-        config("CACHE_URL", default="/media")
-    )
+    CACHE_BASE_URL: str | None = os.path.expandvars(config("CACHE_URL", default="/media"))
 
 
 class CryptSettings(BaseSettings):
@@ -71,9 +59,7 @@ class PostgresSettings(BaseSettings):
     POSTGRES_PORT: int = config("POSTGRES_PORT", default=5432)
     POSTGRES_DB: str = config("POSTGRES_DB", default="postgres")
     POSTGRES_SYNC_PREFIX: str = config("POSTGRES_SYNC_PREFIX", default="postgresql://")
-    POSTGRES_ASYNC_PREFIX: str = config(
-        "POSTGRES_ASYNC_PREFIX", default="postgresql+asyncpg://"
-    )
+    POSTGRES_ASYNC_PREFIX: str = config("POSTGRES_ASYNC_PREFIX", default="postgresql+asyncpg://")
     POSTGRES_URI: str = os.path.expandvars(
         config(
             "POSTGRES_URI",
@@ -83,10 +69,8 @@ class PostgresSettings(BaseSettings):
 
 
 class RedisCacheSettings(BaseSettings):
-    REDIS_CACHE_HOST: str = os.path.expandvars(
-        config("REDIS_CACHE_HOST", default="localhost")
-    )
-    REDIS_CACHE_PORT: int = os.path.expandvars(config("REDIS_CACHE_PORT", default=6379))
+    REDIS_CACHE_HOST: str = os.path.expandvars(config("REDIS_CACHE_HOST", default="localhost"))
+    REDIS_CACHE_PORT: int = config("REDIS_CACHE_PORT", default=6379)
     REDIS_CACHE_URL: str = f"redis://{REDIS_CACHE_HOST}:{REDIS_CACHE_PORT}"
 
 
@@ -95,21 +79,15 @@ class ClientSideCacheSettings(BaseSettings):
 
 
 class RedisQueueSettings(BaseSettings):
-    REDIS_QUEUE_HOST: str = os.path.expandvars(
-        config("REDIS_QUEUE_HOST", default="localhost")
-    )
+    REDIS_QUEUE_HOST: str = os.path.expandvars(config("REDIS_QUEUE_HOST", default="localhost"))
     REDIS_QUEUE_PORT: int = config("REDIS_QUEUE_PORT", default=6379)
 
 
 class RedisRateLimiterSettings(BaseSettings):
-    REDIS_RATE_LIMIT_HOST: str = os.path.expandvars(
-        config("REDIS_RATE_LIMIT_HOST", default="localhost")
-    )
+    REDIS_RATE_LIMIT_HOST: str = os.path.expandvars(config("REDIS_RATE_LIMIT_HOST", default="localhost"))
     REDIS_RATE_LIMIT_PORT: int = config("REDIS_RATE_LIMIT_PORT", default=6379)
     REDIS_RATE_LIMIT_DATABASE: int = config("REDIS_RATE_LIMIT_DATABASE", default=10)
-    REDIS_RATE_LIMIT_URL: str = (
-        f"redis://{REDIS_RATE_LIMIT_HOST}:{REDIS_RATE_LIMIT_PORT}/{REDIS_RATE_LIMIT_DATABASE}"
-    )
+    REDIS_RATE_LIMIT_URL: str = f"redis://{REDIS_RATE_LIMIT_HOST}:{REDIS_RATE_LIMIT_PORT}/{REDIS_RATE_LIMIT_DATABASE}"
 
 
 class DefaultRateLimitSettings(BaseSettings):
@@ -157,9 +135,7 @@ def get_asset_dir_path(asset: Literal["cache"]) -> Path:
     return asset_path
 
 
-def get_cached_file_base_path(
-    file_type: Literal["media", "data"] | None = "media", source: str | None = None
-) -> Path:
+def get_cached_file_base_path(file_type: Literal["media", "data"] | None = "media", source: str | None = None) -> Path:
     cache_path = get_asset_dir_path("cache") / file_type
     if source is not None:
         cache_path = cache_path / source
@@ -169,9 +145,7 @@ def get_cached_file_base_path(
 
 
 def get_cached_file_url(file_path: str | Path) -> str:
-    media_path = str(file_path).replace(
-        f"{settings.ASSETS_DIR_MAP['cache']}/media/", ""
-    )
+    media_path = str(file_path).replace(f"{settings.ASSETS_DIR_MAP['cache']}/media/", "")
     return f"{settings.APP_BASE_URL}{settings.APP_SUBPATH}{settings.CACHE_BASE_URL}/{media_path}"
 
 
