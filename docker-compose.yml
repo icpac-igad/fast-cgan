@@ -88,7 +88,7 @@ services:
       - ${MODEL_CONFIG_DIR:-./data/model}/constants:${WORK_HOME:-/opt/cgan/model}/constants
       - ${CGAN_LOCAL_CONFIG:-./configs/local_config.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/local_config.yaml:ro
       - ${JURRE_MAIN_CONFIG:-./configs/jurre-brishti/config.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/confg.yaml:ro
-      - ${JURRE_CGAN_DATA_PATHS_CONFIG:-./configs/jurre-brishti/data_paths.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/data_paths.yaml:ro
+      - ${JURRE_CGAN_DATA_PAPVT_NET_IPTHS_CONFIG:-./configs/jurre-brishti/data_paths.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/data_paths.yaml:ro
       - ${JURRE_CGAN_FORECAST_CONFIG:-./configs/jurre-brishti/forecast-ens.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/forecast.yaml:ro
       - ${IFS_SERVER_KEY:-./data/private/id_rsa.key}:${IFS_PRIVATE_KEY:-/srv/ssl/private.key}:ro
 
