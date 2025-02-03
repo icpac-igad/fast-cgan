@@ -15,6 +15,7 @@ from fastcgan.jobs.download import (
     syncronize_open_ifs_forecast_data,
     syncronize_post_processed_ifs_data,
 )
+from fastcgan.jobs.proxy_sync import sync_data_source
 from fastcgan.jobs.stubs import cgan_ifs_literal, open_ifs_literal
 from fastcgan.jobs.utils import set_data_sycn_status
 
@@ -55,24 +56,37 @@ if __name__ == "__main__":
     initialize_logger(source)
     logger.info(f"initializing {source} data sync and associated forecasts generation where necessary!")
 
-    set_data_sycn_status(source=source, status=0)
+    set_data_sycn_status(source=source, sync_type="download", status=False)
+    set_data_sycn_status(source=source, sync_type="processing", status=False)
 
     if source == "mvua-kubwa":
-        set_data_sycn_status(source="cgan-ifs-7d-ens", status=0)
+        set_data_sycn_status(source="cgan-ifs-7d-ens", sync_type="download", status=False)
+        set_data_sycn_status(source="cgan-ifs-7d-ens", sync_type="processing", status=False)
+        sync_data_source(sources=source)
         post_process_downloaded_cgan_ifs(model="cgan-ifs-7d-ens")
         syncronize_post_processed_ifs_data(model="cgan-ifs-7d-ens")
         for hour in range(11, 24, 1):
             schedule.every().day.at(f"{str(hour).rjust(2, '0')}:00", "Africa/Nairobi").do(
                 syncronize_post_processed_ifs_data, model="cgan-ifs-7d-ens"
             )
+        for hour in range(11, 24, 1):
+            schedule.every().day.at(f"{str(hour).rjust(2, '0')}:00", "Africa/Nairobi").do(
+                sync_data_source, sources=source
+            )
 
     elif source == "jurre-brishti":
-        set_data_sycn_status(source="cgan-ifs-6h-ens", status=0)
+        set_data_sycn_status(source="cgan-ifs-6h-ens", sync_type="download", status=False)
+        set_data_sycn_status(source="cgan-ifs-6h-ens", sync_type="processing", status=False)
+        sync_data_source(sources=source)
         post_process_downloaded_cgan_ifs(model="cgan-ifs-6h-ens")
         syncronize_post_processed_ifs_data(model="cgan-ifs-6h-ens")
         for hour in range(11, 24, 1):
             schedule.every().day.at(f"{str(hour).rjust(2, '0')}:00", "Africa/Nairobi").do(
                 syncronize_post_processed_ifs_data, model="cgan-ifs-6h-ens"
+            )
+        for hour in range(11, 24, 1):
+            schedule.every().day.at(f"{str(hour).rjust(2, '0')}:00", "Africa/Nairobi").do(
+                sync_data_source, sources=source
             )
 
     elif source == "open-ifs":

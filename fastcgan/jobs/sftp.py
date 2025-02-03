@@ -66,6 +66,7 @@ def fetch_remote_file(
     except Exception as err:
         logger.error(f"failed to fetch sftp file from path {remote_path} with error {err}")
         return None
+    logger.info(f"successfully downloaded data file {remote_path} and saved into {local_path}")
     return file_name
 
 
