@@ -60,9 +60,9 @@ if __name__ == "__main__":
     set_data_sycn_status(source=source, sync_type="processing", status=False)
 
     if source == "mvua-kubwa":
-        sync_data_source(sources=source)
         set_data_sycn_status(source="cgan-ifs-7d-ens", sync_type="download", status=False)
         set_data_sycn_status(source="cgan-ifs-7d-ens", sync_type="processing", status=False)
+        sync_data_source(sources=source)
         post_process_downloaded_cgan_ifs(model="cgan-ifs-7d-ens")
         syncronize_post_processed_ifs_data(model="cgan-ifs-7d-ens")
         for hour in range(11, 24, 1):
@@ -75,9 +75,9 @@ if __name__ == "__main__":
             )
 
     elif source == "jurre-brishti":
-        sync_data_source(sources=source)
         set_data_sycn_status(source="cgan-ifs-6h-ens", sync_type="download", status=False)
         set_data_sycn_status(source="cgan-ifs-6h-ens", sync_type="processing", status=False)
+        sync_data_source(sources=source)
         post_process_downloaded_cgan_ifs(model="cgan-ifs-6h-ens")
         syncronize_post_processed_ifs_data(model="cgan-ifs-6h-ens")
         for hour in range(11, 24, 1):
