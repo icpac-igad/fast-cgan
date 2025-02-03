@@ -14,9 +14,7 @@ def crawl_http_dataset_links(data_page: str) -> list[str]:
     r = requests.get(data_page, allow_redirects=True)
     if r.status_code == 200:
         soup = BeautifulSoup(r.text, features="html.parser")
-        data_files.extend(
-            [f"{data_page}{a['href']}" for a in soup.find_all("a") if "../" not in a]
-        )
+        data_files.extend([f"{data_page}{a['href']}" for a in soup.find_all("a") if "../" not in a])
     else:
         logger.warning(
             f"failed to crawl links from {data_page} with status code {r.status_code} and response text {r.text}"
@@ -44,14 +42,10 @@ def deep_crawl_http_dataset_links(
     return links
 
 
-def make_dataset_path(
-    dataset_url: str, data_source: str, trim_part: str | None = ""
-) -> None:
+def make_dataset_path(dataset_url: str, data_source: str, trim_part: str | None = "") -> None:
     dir_tree = "/".join(dataset_url.replace(trim_part, "").split("/"))
     forecasts_dir = get_data_store_path(source=data_source)
-    data_dir = (
-        forecasts_dir / f"{dir_tree.replace('%20', ' ') if dir_tree != '/' else ''}"
-    )
+    data_dir = forecasts_dir / f"{dir_tree.replace('%20', ' ') if dir_tree != '/' else ''}"
     if not data_dir.exists():
         data_dir.mkdir(parents=True)
 
@@ -95,15 +89,9 @@ def download_ens_dataset(source: str, link: str):
                 if r.status_code == 200:
                     with file_path.open(mode="wb") as f:
                         f.write(r.content)
-                    logger.info(
-                        f"Finished downloading {link}.\t"
-                        + f"Data stream was saved into {file_path.name}"
-                    )
+                    logger.info(f"Finished downloading {link}.\t" + f"Data stream was saved into {file_path.name}")
                 else:
-                    logger.error(
-                        f"failed to download dataset file {link} "
-                        + f"with http response {r.text}"
-                    )
+                    logger.error(f"failed to download dataset file {link} " + f"with http response {r.text}")
 
         except Exception as err:
             logger.error(f"failed to download {link} with error {err}")
@@ -119,17 +107,9 @@ def sync_data_source(
     for source in sources.split(","):
         if source == "mvua-kubwa" or source == "jurre-brishti":
             provider_url = "http://megacorr.dynu.net/ICPAC/cGAN_examplePlots/data"
-            data_path = (
-                "Jurre_brishti_counts"
-                if source == "jurre-brishti"
-                else "Mvua_kubwa_counts"
-            )
-            links = deep_crawl_http_dataset_links(
-                data_page=f"{provider_url}/{data_path}"
-            )
-            logger.info(
-                f"crawled a total of {len(links)} data files from {provider_url}"
-            )
+            data_path = "Jurre_brishti_counts" if source == "jurre-brishti" else "Mvua_kubwa_counts"
+            links = deep_crawl_http_dataset_links(data_page=f"{provider_url}/{data_path}")
+            logger.info(f"crawled a total of {len(links)} data files from {provider_url}")
             for link in links:
                 download_ens_dataset(source=source, link=link)
         else:
@@ -143,12 +123,8 @@ def sync_data_source(
             for datafile_url in data_urls:
                 logger.debug(f"trying download of {datafile_url}")
                 try:
-                    relative_path = datafile_url.replace(provider_url, "").replace(
-                        f"/{source}", ""
-                    )
-                    destination = get_data_store_path(
-                        source=source
-                    ) / f"{relative_path}".replace("%20", " ")
+                    relative_path = datafile_url.replace(provider_url, "").replace(f"/{source}", "")
+                    destination = get_data_store_path(source=source) / f"{relative_path}".replace("%20", " ")
                     with requests.get(datafile_url, stream=True) as r:
                         logger.debug(f"downloading {datafile_url} into {destination}")
 
@@ -156,14 +132,10 @@ def sync_data_source(
                             with destination.open(mode="wb") as f:
                                 f.write(r.content)
                         else:
-                            logger.error(
-                                f"failed to download dataset file {datafile_url} with error {r.text}"
-                            )
+                            logger.error(f"failed to download dataset file {datafile_url} with error {r.text}")
                             return None
 
-                        logger.debug(
-                            f"Finished downloading {datafile_url}.\nData stream was saved in {f.name}"
-                        )
+                        logger.debug(f"Finished downloading {datafile_url}.\nData stream was saved in {f.name}")
 
                 except Exception as e:
                     logger.error(f"Error *{e}*")
@@ -176,9 +148,7 @@ if __name__ == "__main__":
         description="a program for downloading data from online cGAN sources",
         usage="python download.py -y <year> -sm <start-month> -fm <final-month>",
     )
-    parser.add_argument(
-        "-y", "--year", dest="year", type=int, default=2024, help="data year"
-    )
+    parser.add_argument("-y", "--year", dest="year", type=int, default=2024, help="data year")
     parser.add_argument(
         "-sm",
         "--start-month",

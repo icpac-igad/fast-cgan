@@ -17,13 +17,13 @@ from fastcgan.jobs.data_sync import run_ecmwf_ifs_sync
 from fastcgan.jobs.sftp import sync_sftp_data_files
 from fastcgan.jobs.stubs import cgan_ifs_literal, open_ifs_literal
 from fastcgan.jobs.utils import (
-    data_sync_jobs_status,
     get_data_store_path,
     get_data_sycn_status,
     get_dataset_file_path,
     get_forecast_data_dates,
     get_gan_forecast_dates,
     get_possible_forecast_dates,
+    get_processing_task_status,
     migrate_files,
     save_to_new_filesystem_structure,
     set_data_sycn_status,
@@ -32,9 +32,7 @@ from fastcgan.jobs.utils import (
 )
 
 
-def read_dataset(
-    file_path: str | Path, mask_area: str | None = COUNTRY_NAMES[0]
-) -> xr.Dataset:
+def read_dataset(file_path: str | Path, mask_area: str | None = COUNTRY_NAMES[0]) -> xr.Dataset:
     try:
         ds = cfgrib.open_datasets(str(file_path))
     except Exception as err:
@@ -50,9 +48,7 @@ def read_dataset(
         except Exception as err:
             logger.error(f"failed to read dataset {file_path} with error {err}")
     try:
-        data_params = [
-            data_param for data_param in DATA_PARAMS.keys() if data_param != "wind"
-        ]
+        data_params = [data_param for data_param in DATA_PARAMS.keys() if data_param != "wind"]
         data_params.extend(["u10", "v10"])
         return slice_dataset_by_bbox(
             standardize_dataset(ds[data_params]),
@@ -66,12 +62,8 @@ def read_dataset(
 def clean_grib2_index_files(source: str | None = "open-ifs"):
     # remove idx files from the disk
     downloads_path = get_data_store_path(source="jobs") / source
-    idx_files = [
-        idxf for idxf in downloads_path.iterdir() if idxf.name.endswith(".idx")
-    ]
-    logger.info(
-        f"cleaning up grib2 index files {' -> '.join([idxf.name for idxf in idx_files])}"
-    )
+    idx_files = [idxf for idxf in downloads_path.iterdir() if idxf.name.endswith(".idx")]
+    logger.info(f"cleaning up grib2 index files {' -> '.join([idxf.name for idxf in idx_files])}")
     for idx_file in idx_files:
         for _ in range(10):
             try:
@@ -96,6 +88,7 @@ def post_process_ecmwf_grib2_dataset(
     min_grib2_size: float | None = 4.5 * 1024,
 ) -> None:
     logger.info(f"executing post-processing task for {grib2_file_name}")
+    set_data_sycn_status(source=source, sync_type="processing", status=True)
     clean_grib2_index_files()
     data_date = datetime.strptime(grib2_file_name.split("-")[0], "%Y%m%d%H%M%S")
     downloads_path = get_data_store_path(source="jobs") / source
@@ -107,51 +100,37 @@ def post_process_ecmwf_grib2_dataset(
         file_name=nc_file_name,
         data_date=data_date,
     )
-    grib2_size = (
-        0 if not grib2_file.exists() else grib2_file.stat().st_size / (1024 * 1024)
-    )
+    grib2_size = 0 if not grib2_file.exists() else grib2_file.stat().st_size / (1024 * 1024)
     # remove grib2 file if its size is less than the required size
     if grib2_size < min_grib2_size:
         grib2_file.unlink(missing_ok=True)
     elif not nc_file.exists() or force_process:
-        logger.info(
-            f"post-processing ECMWF open IFS forecast data file {grib2_file_name}"
-        )
+        logger.info(f"post-processing ECMWF open IFS forecast data file {grib2_file_name}")
         ds = None
         for _ in range(re_try_times):
             ds = read_dataset(grib2_file)
             if ds is not None:
                 break
         if ds is None:
-            logger.error(
-                f"failed to read {grib2_file} after {re_try_times} unsuccessful trials"
-            )
+            logger.error(f"failed to read {grib2_file} after {re_try_times} unsuccessful trials")
             grib2_file.unlink(missing_ok=True)
         else:
             try:
                 ds.to_netcdf(nc_file, mode="w", format="NETCDF4", engine="netcdf4")
             except Exception as error:
-                logger.error(
-                    f"failed to save {source} open ifs dataset slice for {mask_region} with error {error}"
-                )
+                logger.error(f"failed to save {source} open ifs dataset slice for {mask_region} with error {error}")
             else:
                 if save_for_countries:
                     for country_name in COUNTRY_NAMES[1:]:
-                        logger.info(
-                            f"processing {source} open ifs dataset slice for {country_name}"
-                        )
-                        sliced = slice_dataset_by_bbox(
-                            ds, get_region_extent(country_name)
-                        )
+                        logger.info(f"processing {source} open ifs dataset slice for {country_name}")
+                        sliced = slice_dataset_by_bbox(ds, get_region_extent(country_name))
                         slice_file = get_dataset_file_path(
                             source=source,
                             mask_region=country_name,
                             data_date=data_date,
                             file_name=nc_file_name,
                         )
-                        logger.debug(
-                            f"saving {source} open ifs dataset slice for {country_name} into {slice_file}"
-                        )
+                        logger.debug(f"saving {source} open ifs dataset slice for {country_name} into {slice_file}")
                         try:
                             sliced.to_netcdf(
                                 path=slice_file,
@@ -190,19 +169,11 @@ def post_process_ecmwf_grib2_dataset(
                     try:
                         grib2_file.replace(target=archive_dir / grib2_file_name)
                     except Exception as err:
-                        logger.error(
-                            f"failed to archive {grib2_file_name} to {archive_dir} with error {err}"
-                        )
+                        logger.error(f"failed to archive {grib2_file_name} to {archive_dir} with error {err}")
 
                 # remove idx files from the disk
-                idx_files = [
-                    idxf
-                    for idxf in downloads_path.iterdir()
-                    if idxf.name.endswith(".idx")
-                ]
-                logger.info(
-                    f"cleaning up grib2 index files {' -> '.join([idxf.name for idxf in idx_files])}"
-                )
+                idx_files = [idxf for idxf in downloads_path.iterdir() if idxf.name.endswith(".idx")]
+                logger.info(f"cleaning up grib2 index files {' -> '.join([idxf.name for idxf in idx_files])}")
                 for idx_file in idx_files:
                     for _ in range(10):
                         try:
@@ -215,28 +186,22 @@ def post_process_ecmwf_grib2_dataset(
                     if idx_file.exists():
                         logger.error(f"failed to delete grib2 index file {idx_file}")
 
+    set_data_sycn_status(source=source, sync_type="processing", status=False)
+
 
 def post_process_downloaded_ecmwf_forecasts(
     source: open_ifs_literal | None = "open-ifs",
 ) -> None:
     # run infinite loop that is executed when there are no other active workers
     while True:
-        if not data_sync_jobs_status():
+        if not get_processing_task_status():
             downloads_path = get_data_store_path(source="jobs") / source
             if downloads_path.exists():
-                grib2_files = [
-                    dfile.name
-                    for dfile in downloads_path.iterdir()
-                    if dfile.name.endswith(".grib2")
-                ]
+                grib2_files = [dfile.name for dfile in downloads_path.iterdir() if dfile.name.endswith(".grib2")]
                 if not len(grib2_files):
-                    logger.warning(
-                        "no un-processed open-ifs datasets found. task skipped!"
-                    )
+                    logger.warning("no un-processed open-ifs datasets found. task skipped!")
                 else:
-                    logger.info(
-                        f"starting batch post-processing tasks for {'  <---->  '.join(grib2_files)}"
-                    )
+                    logger.info(f"starting batch post-processing tasks for {'  <---->  '.join(grib2_files)}")
                     for grib2_file in grib2_files:
                         post_process_ecmwf_grib2_dataset(
                             source=source,
@@ -272,16 +237,12 @@ def syncronize_open_ifs_forecast_data(
         data_dates = get_possible_forecast_dates(data_date=date_str, dateback=dateback)
         ifs_dates = [
             datetime.strptime(value, "%b %d, %Y").date()
-            for value in get_forecast_data_dates(
-                source="open-ifs", mask_region=mask_region
-            )
+            for value in get_forecast_data_dates(source="open-ifs", mask_region=mask_region)
         ]
 
         # set data syncronization status
-        set_data_sycn_status(source="open-ifs", status=1)
-        with concurrent.futures.ThreadPoolExecutor(
-            max_workers=int(cpu_count() / 2)
-        ) as executor:
+        set_data_sycn_status(sync_type="download", source="open-ifs", status=True)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=int(cpu_count() / 2)) as executor:
             results = [
                 executor.submit(
                     run_ecmwf_ifs_sync,
@@ -289,9 +250,7 @@ def syncronize_open_ifs_forecast_data(
                     start_step=start_step,
                     final_step=final_step,
                 )
-                for data_date in [
-                    value for value in data_dates if value not in ifs_dates
-                ]
+                for data_date in [value for value in data_dates if value not in ifs_dates]
             ]
             for future in concurrent.futures.as_completed(results):
                 if future.result() is not None:
@@ -299,22 +258,20 @@ def syncronize_open_ifs_forecast_data(
                     if grib2_files is not None:
                         # run infinite loop that is executed when there are no other active workers
                         while True:
-                            if not data_sync_jobs_status():
+                            if not get_processing_task_status():
                                 for grib2_file in grib2_files:
-                                    post_process_ecmwf_grib2_dataset(
-                                        grib2_file_name=grib2_file
-                                    )
+                                    post_process_ecmwf_grib2_dataset(grib2_file_name=grib2_file)
                                 # break the loop at the end of execution
                                 break
                             # sleep for 10 minutes
                             sleep(60 * 10)
 
         # set data syncronization status
-        set_data_sycn_status(source="open-ifs", status=0)
+        set_data_sycn_status(sync_type="download", source="open-ifs", status=False)
 
 
 def generate_cgan_forecasts(model: str, mask_region: str | None = COUNTRY_NAMES[0]):
-    set_data_sycn_status(source=model, status=1)
+    set_data_sycn_status(source=model, sync_type="processing", status=True)
     gbmc_source = "cgan-ifs-7d-ens" if model == "mvua-kubwa-ens" else "cgan-ifs-6h-ens"
     ifs_dates = get_gan_forecast_dates(mask_region=mask_region, source=gbmc_source)
     gan_dates = get_gan_forecast_dates(mask_region=mask_region, source=model)
@@ -333,11 +290,7 @@ def generate_cgan_forecasts(model: str, mask_region: str | None = COUNTRY_NAMES[
         store_path = get_data_store_path(source=gbmc_source, mask_region=mask_region)
         gan_ifs = str(gbmc_filename).replace(f"{store_path}/", "")
         logger.debug(f"starting {model} forecast generation with IFS file {gan_ifs}")
-        cgan_file_path = (
-            get_data_store_path(source="jobs")
-            / model
-            / f"GAN_{date_str}_{init_time}Z.nc"
-        )
+        cgan_file_path = get_data_store_path(source="jobs") / model / f"GAN_{date_str}_{init_time}Z.nc"
         gen_cgan_status = subprocess.call(
             shell=True,
             cwd=f'{getenv("WORK_HOME","/opt/cgan")}/ensemble-cgan/dsrnngan',
@@ -348,42 +301,28 @@ def generate_cgan_forecasts(model: str, mask_region: str | None = COUNTRY_NAMES[
             gbmc_filename.unlink(missing_ok=True)
             cgan_file_path.unlink(missing_ok=True)
         else:
-            save_to_new_filesystem_structure(
-                file_path=cgan_file_path, source=model, part_to_replace="GAN_"
-            )
-    set_data_sycn_status(source=model, status=0)
+            save_to_new_filesystem_structure(file_path=cgan_file_path, source=model, part_to_replace="GAN_")
+    set_data_sycn_status(source=model, sync_type="processing", status=False)
 
 
 def post_process_downloaded_cgan_ifs(model: cgan_ifs_literal):
     # start an infinite loop that is executed when there are no other jobs running
     while True:
-        if not data_sync_jobs_status():
+        if not get_processing_task_status():
             downloads_path = get_data_store_path(source="jobs") / model
             if downloads_path.exists():
-                gbmc_files = [
-                    file_path
-                    for file_path in downloads_path.iterdir()
-                    if file_path.name.endswith(".nc")
-                ]
+                gbmc_files = [file_path for file_path in downloads_path.iterdir() if file_path.name.endswith(".nc")]
                 if not len(gbmc_files):
-                    logger.warning(
-                        f"no un-processed {model} datasets found. task skipped!"
-                    )
+                    logger.warning(f"no un-processed {model} datasets found. task skipped!")
                 else:
                     logger.info(
                         f"starting {model} forecasts batch post-processing task for "
                         + f"{'  <---->  '.join([gbmc_file.name for gbmc_file in gbmc_files])}"
                     )
                     for gbmc_file in gbmc_files:
-                        save_to_new_filesystem_structure(
-                            file_path=gbmc_file, source=model, part_to_replace="IFS_"
-                        )
+                        save_to_new_filesystem_structure(file_path=gbmc_file, source=model, part_to_replace="IFS_")
                     generate_cgan_forecasts(
-                        model=(
-                            "jurre-brishti-ens"
-                            if model == "cgan-ifs-6h-ens"
-                            else "mvua-kubwa-ens"
-                        )
+                        model=("jurre-brishti-ens" if model == "cgan-ifs-6h-ens" else "mvua-kubwa-ens")
                     )
                 # purge invalid files
                 for file_path in downloads_path.iterdir():
@@ -394,22 +333,16 @@ def post_process_downloaded_cgan_ifs(model: cgan_ifs_literal):
         sleep(60 * 10)
 
 
-def syncronize_post_processed_ifs_data(
-    model: cgan_ifs_literal, mask_region: str | None = COUNTRY_NAMES[0]
-):
+def syncronize_post_processed_ifs_data(model: cgan_ifs_literal, mask_region: str | None = COUNTRY_NAMES[0]):
     logger.debug(f"received cGAN data syncronization for {model} - {mask_region}")
     if not get_data_sycn_status(source=model):
         # set data syncronization status
-        set_data_sycn_status(source=model, status=1)
+        set_data_sycn_status(source=model, sync_type="download", status=True)
         sync_sftp_data_files(model=model)
         while True:
-            if not data_sync_jobs_status():
+            if not get_processing_task_status():
                 generate_cgan_forecasts(
-                    model=(
-                        "jurre-brishti-ens"
-                        if model == "cgan-ifs-6h-ens"
-                        else "mvua-kubwa-ens"
-                    ),
+                    model=("jurre-brishti-ens" if model == "cgan-ifs-6h-ens" else "mvua-kubwa-ens"),
                     mask_region=mask_region,
                 )
                 # break the loop
@@ -417,7 +350,7 @@ def syncronize_post_processed_ifs_data(
             # sleep for 10 minutes
             sleep(60 * 10)
         # set data syncronization status
-        set_data_sycn_status(source=model, status=0)
+        set_data_sycn_status(source=model, sync_type="download", status=False)
 
 
 if __name__ == "__main__":
@@ -465,15 +398,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
     dict_args = {key: value for key, value in args.__dict__.items() if key != "command"}
     if args.model == "open-ifs":
-        logger.info(
-            f"received ecmwf forecast data download task with parameters {dict_args}"
-        )
+        logger.info(f"received ecmwf forecast data download task with parameters {dict_args}")
         post_process_downloaded_ecmwf_forecasts(args.model)
         syncronize_open_ifs_forecast_data(**dict_args)
     elif args.model == "jurre-brishti" or args.model == "mvua-kubwa":
-        post_process_downloaded_cgan_ifs(
-            model="cgan-ifs-7d-ens" if args.model == "mvua-kubwa" else "cgan-ifs-6h-ens"
-        )
+        post_process_downloaded_cgan_ifs(model="cgan-ifs-7d-ens" if args.model == "mvua-kubwa" else "cgan-ifs-6h-ens")
         syncronize_post_processed_ifs_data(model=args.model)
     elif args.model == "migrate":
         for source in ["open-ifs", "cgan-ifs", "cgan-forecast"]:

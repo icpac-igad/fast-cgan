@@ -2,6 +2,7 @@ import json
 import os
 from datetime import date, datetime, timedelta
 from pathlib import Path
+from typing import Literal
 
 import xarray as xr
 from loguru import logger
@@ -25,9 +26,7 @@ def get_locations_data_for_region(region: str | None = None):
     return [location for location in locations if location["country"] == region]
 
 
-def get_possible_forecast_dates(
-    data_date: str | None = None, dateback: int | None = 4
-) -> list[datetime.date]:
+def get_possible_forecast_dates(data_date: str | None = None, dateback: int | None = 4) -> list[datetime.date]:
     if data_date is not None:
         return [datetime.strptime(data_date, "%Y-%m-%d").date()]
     now = datetime.now()
@@ -38,9 +37,7 @@ def get_possible_forecast_dates(
     return dates
 
 
-def get_relevant_forecast_steps(
-    start: int | None = 30, final: int | None = 54, step: int | None = 3
-) -> list[int]:
+def get_relevant_forecast_steps(start: int | None = 30, final: int | None = 54, step: int | None = 3) -> list[int]:
     return list(range(start, final + 1, step))
 
 
@@ -106,9 +103,7 @@ def get_forecast_data_files(
     return [str(dfile).split("/")[-1] for dfile in data_files]
 
 
-def get_ecmwf_files_for_date(
-    data_date: datetime, mask_region: str | None = COUNTRY_NAMES[0]
-) -> list[str]:
+def get_ecmwf_files_for_date(data_date: datetime, mask_region: str | None = COUNTRY_NAMES[0]) -> list[str]:
     steps = get_relevant_forecast_steps()
     return [
         f"{mask_region.lower().replace(' ', '_')}-open_ifs-{data_date.strftime('%Y%m%d')}000000-{step}h-enfo-ef.nc"
@@ -125,28 +120,17 @@ def get_forecast_data_dates(
         source = f"{source}-ens"
     data_files = get_forecast_data_files(source=source, mask_region=mask_region)
     if "-count" in source:
-        data_dates = sorted(
-            {dfile.replace(".nc", "").split("_")[1] for dfile in data_files}
-        )
+        data_dates = sorted({dfile.replace(".nc", "").split("_")[1] for dfile in data_files})
         return list(
-            reversed(
-                [
-                    datetime.strptime(data_date, "%Y%m%d").strftime("%b %d, %Y")
-                    for data_date in data_dates
-                ]
-            )
+            reversed([datetime.strptime(data_date, "%Y%m%d").strftime("%b %d, %Y") for data_date in data_dates])
         )
 
-    data_dates = sorted(
-        {dfile.replace(".nc", "").split("-")[2].split("_")[0] for dfile in data_files}
-    )
+    data_dates = sorted({dfile.replace(".nc", "").split("-")[2].split("_")[0] for dfile in data_files})
     if not strict or source != "open-ifs":
         return list(
             reversed(
                 [
-                    datetime.strptime(
-                        data_date.replace("000000", ""), "%Y%m%d"
-                    ).strftime("%b %d, %Y")
+                    datetime.strptime(data_date.replace("000000", ""), "%Y%m%d").strftime("%b %d, %Y")
                     for data_date in data_dates
                 ]
             )
@@ -175,9 +159,7 @@ def get_gan_forecast_initializations(
     mask_region: str | None = COUNTRY_NAMES[0],
 ) -> dict[str, list[str]]:
     init_dates = {}
-    for data_date in reversed(
-        get_gan_forecast_dates(source=source, mask_region=mask_region)
-    ):
+    for data_date in reversed(get_gan_forecast_dates(source=source, mask_region=mask_region)):
         date_str, init_time = data_date.split("_")
         if date_str in init_dates.keys():
             init_dates[date_str] = init_dates[date_str].append(init_time)
@@ -199,9 +181,7 @@ def slice_dataset_by_bbox(ds: xr.Dataset, bbox: list[float]):
     try:
         ds = ds.sel(longitude=slice(bbox[0], bbox[1]))
     except Exception as err:
-        logger.error(
-            f"failed to slice dataset by bbox with error {err}. Dataset dims: {ds.dims}"
-        )
+        logger.error(f"failed to slice dataset by bbox with error {err}. Dataset dims: {ds.dims}")
         return None
     else:
         if ds.latitude.values[0] < ds.latitude.values[-1]:
@@ -218,28 +198,22 @@ def save_to_new_filesystem_structure(
     min_gbmc_size: int | None = 40 * 1024,
     part_to_replace: str | None = None,
 ) -> None:
-    logger.debug(
-        f"received filesystem migration task for - {mask_region}- {source} - {file_path}"
-    )
+    logger.debug(f"received filesystem migration task for - {mask_region}- {source} - {file_path}")
     if source == "cgan-ifs-6h-ens" and file_path.stat().st_size / 1024 < min_gbmc_size:
         logger.debug(
             f"{file_path.name} migration task skipped due to invalid size of {file_path.stat().st_size / 1024}Kb"
         )
         file_path.unlink()
     else:
-        logger.debug(
-            f"processing {file_path.name} migration into revised filesystem structure"
-        )
-        set_data_sycn_status(source=source, status=1)
+        logger.debug(f"processing {file_path.name} migration into revised filesystem structure")
+        set_data_sycn_status(source=source, sync_type="processing", status=True)
         try:
             ds = slice_dataset_by_bbox(
                 standardize_dataset(xr.open_dataset(file_path, decode_times=False)),
                 get_region_extent(shape_name=mask_region),
             )
         except Exception as err:
-            logger.error(
-                f"failed to read {source} data file {file_path} with error {err}"
-            )
+            logger.error(f"failed to read {source} data file {file_path} with error {err}")
             file_path.unlink(missing_ok=True)
         else:
             fname = file_path.name.replace(part_to_replace, "")
@@ -257,18 +231,12 @@ def save_to_new_filesystem_structure(
             except Exception as error:
                 errors.append(f"failed to save {target_file} with error {error}")
             else:
-                logger.debug(
-                    f"succeefully saved dataset file {file_path} to {target_file}"
-                )
+                logger.debug(f"succeefully saved dataset file {file_path} to {target_file}")
                 for country_name in COUNTRY_NAMES[1:]:
                     # create country slices
-                    sliced = slice_dataset_by_bbox(
-                        ds=ds, bbox=get_region_extent(shape_name=country_name)
-                    )
+                    sliced = slice_dataset_by_bbox(ds=ds, bbox=get_region_extent(shape_name=country_name))
                     if sliced is None:
-                        errors.append(
-                            f"error slicing {file_path.name} for bbox {country_name}"
-                        )
+                        errors.append(f"error slicing {file_path.name} for bbox {country_name}")
                     else:
                         slice_target = get_dataset_file_path(
                             source=source,
@@ -276,25 +244,17 @@ def save_to_new_filesystem_structure(
                             file_name=fname,
                             mask_region=country_name,
                         )
-                        logger.debug(
-                            f"migrating dataset slice for {country_name} to {slice_target}"
-                        )
+                        logger.debug(f"migrating dataset slice for {country_name} to {slice_target}")
                         try:
                             sliced.to_netcdf(slice_target, mode="w", format="NETCDF4")
                         except Exception as error:
-                            errors.append(
-                                f"failed to save {slice_target} with error {error}"
-                            )
+                            errors.append(f"failed to save {slice_target} with error {error}")
                         else:
-                            logger.debug(
-                                f"succeefully migrated dataset slice for {country_name}"
-                            )
+                            logger.debug(f"succeefully migrated dataset slice for {country_name}")
             if not len(errors):
-                logger.debug(
-                    f"removing forecast file {file_path.name} after a successful migration"
-                )
+                logger.debug(f"removing forecast file {file_path.name} after a successful migration")
                 file_path.unlink(missing_ok=True)
-        set_data_sycn_status(source=source, status=0)
+        set_data_sycn_status(source=source, sync_type="processing", status=False)
 
 
 # migrate dataset files from initial filesystem structure to revised.
@@ -311,59 +271,60 @@ def migrate_files(source: str):
             data_dir = store / "interim" / "EA" / "open-ifs" / "enfo"
             part_to_replace = ""
     data_files = [fpath for fpath in data_dir.iterdir() if fpath.name.endswith(".nc")]
-    logger.info(
-        f"processing file-structure migration for {len(data_files)} {source} data files"
-    )
+    logger.info(f"processing file-structure migration for {len(data_files)} {source} data files")
     # copy data_files to new files path
     for dfile in data_files:
-        save_to_new_filesystem_structure(
-            file_path=dfile, source=source, part_to_replace=part_to_replace
-        )
+        save_to_new_filesystem_structure(file_path=dfile, source=source, part_to_replace=part_to_replace)
 
 
 def set_data_sycn_status(
+    sync_type: Literal["download", "processing"],
     source: cgan_model_literal | cgan_ifs_literal | open_ifs_literal,
-    status: int | None = 1,
+    status: bool | None = True,
 ):
     status_file = Path(os.getenv("LOGS_DIR", "./")) / "data-sync-tasks-status.json"
     if not status_file.exists():
         with open(status_file, "w") as sf:
-            sf.write(json.dumps({source: status}))
+            sf.write(json.dumps({sync_type: {source: status}}))
     else:
         with open(status_file, "w+") as sf:
             try:
                 data = json.loads(sf.read())
-                data[source] = status
+                data[sync_type][source] = status
             except Exception:
-                data = {source: status}
+                data = {sync_type: {source: status}}
             sf.write(json.dumps(data))
 
 
 def get_data_sycn_status(
+    sync_type: Literal["download", "processing"],
     source: cgan_model_literal | cgan_ifs_literal | open_ifs_literal,
-) -> int:
+) -> bool:
     status_file = Path(os.getenv("LOGS_DIR", "./")) / "data-sync-tasks-status.json"
 
     if not status_file.exists():
         # initialize with not-active status
         with open(status_file, "w") as sf:
-            sf.write(json.dumps({source: 0}))
+            sf.write(json.dumps({sync_type: {source: False}}))
 
     # check if there is an active data syncronization job
     with open(status_file) as sf:
         data = json.loads(sf.read())
-        if source in data.keys():
-            return data[source]
-        return 0
+        if source in data[sync_type].keys():
+            return data[sync_type][source]
+        return False
 
 
-def data_sync_jobs_status() -> int:
+def get_processing_task_status(sync_type: str | None = "processing") -> bool:
     status_file = Path(os.getenv("LOGS_DIR", "./")) / "data-sync-tasks-status.json"
     if not status_file.exists():
-        return 0
+        return False
+
     with open(status_file) as sf:
         data = json.loads(sf.read())
-        return all(value > 0 for value in data.values())
+        if sync_type not in data.keys():
+            return False
+        return all(data[sync_type].values())
 
 
 # Some info to be clear with dates and times
@@ -387,9 +348,7 @@ def get_possible_variables(print_variables=True):
     if print_variables:
         print("Available variables to plot are the following:")
         for i in range(len(keys)):
-            print(
-                f"{keys[i]:<5} - {DATA_PARAMS[keys[i]]['name']} ({DATA_PARAMS[keys[i]]['units']})"
-            )
+            print(f"{keys[i]:<5} - {DATA_PARAMS[keys[i]]['name']} ({DATA_PARAMS[keys[i]]['units']})")
         print()
 
     return list(DATA_PARAMS.keys())
@@ -401,9 +360,7 @@ def get_accumulation_units(acc_time: str) -> str | None:
     return None
 
 
-def get_exceedence_normalization(
-    threshold: dict[str, str], acc_time: str
-) -> int | float:
+def get_exceedence_normalization(threshold: dict[str, str], acc_time: str) -> int | float:
     if threshold["acc_time"] == acc_time:
         return threshold["value"]
 
