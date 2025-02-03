@@ -226,7 +226,7 @@ def syncronize_open_ifs_forecast_data(
         + f"{dt_fx} with time steps {start_step} to {final_step} and {dateback} days back"
     )
 
-    if not get_data_sycn_status(source="open-ifs"):
+    if not get_data_sycn_status(source="open-ifs", sync_type="download"):
         mask_region = getenv("DEFAULT_MASK", COUNTRY_NAMES[0])
         logger.info(
             f"starting open-ifs forecast data syncronization for {mask_region} at "
@@ -335,7 +335,7 @@ def post_process_downloaded_cgan_ifs(model: cgan_ifs_literal):
 
 def syncronize_post_processed_ifs_data(model: cgan_ifs_literal, mask_region: str | None = COUNTRY_NAMES[0]):
     logger.debug(f"received cGAN data syncronization for {model} - {mask_region}")
-    if not get_data_sycn_status(source=model):
+    if not get_data_sycn_status(source=model, sync_type="download"):
         # set data syncronization status
         set_data_sycn_status(source=model, sync_type="download", status=True)
         sync_sftp_data_files(model=model)
