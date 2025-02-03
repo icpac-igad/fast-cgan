@@ -67,7 +67,7 @@ def post_process_ecmwf_grib2_dataset(
     mask_region: str | None = COUNTRY_NAMES[0],
     save_for_countries: bool | None = True,
     archive_grib2: bool | None = False,
-    min_grib2_size: float | None = 4.5 * 1024,
+    min_grib2_size: float | None = 5.9 * 1024,
 ) -> None:
     logger.info(f"executing post-processing task for {grib2_file_name}")
     data_date = datetime.strptime(grib2_file_name.split("-")[0], "%Y%m%d%H%M%S")
@@ -276,6 +276,7 @@ def generate_cgan_forecasts(model: str, mask_region: str | None = COUNTRY_NAMES[
             )
         except Exception as error:
             logger.error(f"failed to generate {model} cGAN forecast for {missing_date} with error {error}")
+            gbmc_filename.unlink(missing_ok=True)
         else:
             cgan_file_path = get_data_store_path(source="jobs") / model / f"GAN_{date_str}_{init_time}Z.nc"
             save_to_new_filesystem_structure(file_path=cgan_file_path, source=model, part_to_replace="GAN_")
