@@ -208,10 +208,7 @@ def save_to_new_filesystem_structure(
         logger.debug(f"processing {file_path.name} migration into revised filesystem structure")
         set_data_sycn_status(source=source, sync_type="processing", status=True)
         try:
-            ds = slice_dataset_by_bbox(
-                standardize_dataset(xr.open_dataset(file_path, decode_times=False)),
-                get_region_extent(shape_name=mask_region),
-            )
+            ds = standardize_dataset(xr.open_dataset(file_path, decode_times=False))
         except Exception as err:
             logger.error(f"failed to read {source} data file {file_path} with error {err}")
             file_path.unlink(missing_ok=True)
