@@ -310,6 +310,8 @@ def get_data_sycn_status(
     # check if there is an active data syncronization job
     with open(status_file) as sf:
         data = json.loads(sf.read())
+        if sync_type not in data.keys():
+            return False
         if source in data[sync_type].keys():
             return data[sync_type][source]
         return False
