@@ -284,12 +284,13 @@ def set_data_sycn_status(
         with open(status_file, "w") as sf:
             sf.write(json.dumps({sync_type: {source: status}}))
     else:
-        with open(status_file, "w+") as sf:
-            try:
-                data = json.loads(sf.read())
-                data[sync_type][source] = status
-            except Exception:
-                data = {sync_type: {source: status}}
+        with open(status_file) as sf:
+            data = json.loads(sf.read())
+        if sync_type not in data.keys():
+            data.update({sync_type: {source: status}})
+        else:
+            data[sync_type][source] = status
+        with open(status_file, "w") as sf:
             sf.write(json.dumps(data))
 
 
@@ -300,15 +301,11 @@ def get_data_sycn_status(
     status_file = Path(os.getenv("LOGS_DIR", "./")) / "data-sync-tasks-status.json"
 
     if not status_file.exists():
-        # initialize with not-active status
-        with open(status_file, "w") as sf:
-            sf.write(json.dumps({sync_type: {source: False}}))
+        return False
 
     # check if there is an active data syncronization job
     with open(status_file) as sf:
         data = json.loads(sf.read())
-        if sync_type not in data.keys():
-            return False
         if source in data[sync_type].keys():
             return data[sync_type][source]
         return False
