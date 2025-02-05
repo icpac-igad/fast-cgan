@@ -127,9 +127,7 @@ def run_ecmwf_ifs_sync(
             ]
         for future in concurrent.futures.as_completed(results):
             if future.result() is not None:
-                grib2_files = future.result()
-                if grib2_files is not None:
-                    grib2_files.append(future.result())
+                grib2_files.append(future.result())
         return grib2_files
     else:
         logger.warning(f"IFS forecast data for {data_date} is not available. Please try again later!")

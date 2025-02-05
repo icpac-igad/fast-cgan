@@ -94,7 +94,6 @@ def sync_sftp_data_files(
     ifs_dates = get_gan_forecast_dates(source=model)
     to_sync = [f"IFS_{data_date}Z.nc" for data_date in data_dates if data_date not in ifs_dates]
     logger.debug(f"processing sftp data syncronization for {len(to_sync)} {model} source files")
-    synced_files = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=cpu_count() * 4) as executor:
         results = [
             executor.submit(
@@ -106,9 +105,7 @@ def sync_sftp_data_files(
         ]
         for future in concurrent.futures.as_completed(results):
             if future.result() is not None:
-                gbmc_file = future.result()
-                if gbmc_file is not None:
-                    synced_files.append(gbmc_file)
+                logger.debug(f"completed sftp sync of {future.result()}")
 
 
 if __name__ == "__main__":
