@@ -231,7 +231,7 @@ def save_to_new_filesystem_structure(
                 errors.append(f"failed to save {target_file} with error {error}")
             else:
                 logger.debug(f"succeefully saved dataset file {file_path} to {target_file}")
-                if source != ens_ifs_models:  # split cGAN forecasts by country
+                if source not in ens_ifs_models:  # split cGAN forecasts by country
                     for country_name in COUNTRY_NAMES[1:]:
                         # create country slices
                         sliced = slice_dataset_by_bbox(ds=ds, bbox=get_region_extent(shape_name=country_name))
