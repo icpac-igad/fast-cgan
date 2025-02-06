@@ -344,18 +344,9 @@ def syncronize_post_processed_ifs_data(model: cgan_ifs_literal, mask_region: str
         # set data syncronization status
         set_data_sycn_status(source=model, sync_type="download", status=True)
         sync_sftp_data_files(model=model)
-        while True:
-            if not get_processing_task_status():
-                generate_cgan_forecasts(
-                    model=("jurre-brishti-ens" if model == "cgan-ifs-6h-ens" else "mvua-kubwa-ens"),
-                    mask_region=mask_region,
-                )
-                # break the loop
-                break
-            # sleep for 10 minutes
-            sleep(60 * 10)
-        # set data syncronization status
         set_data_sycn_status(source=model, sync_type="download", status=False)
+        # start post-processing task for all downloaded IFS data including forecast production
+        post_process_downloaded_cgan_ifs(model=model)
 
 
 if __name__ == "__main__":

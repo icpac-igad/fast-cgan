@@ -44,6 +44,7 @@ def get_relevant_forecast_steps(start: int | None = 30, final: int | None = 54, 
 def get_data_store_path(
     source: str,
     mask_region: str | None = None,
+    ens_ifs_models: list[str] | None = ["cgan-ifs-6h-ens", "cgan-ifs-7d-ens"],
 ) -> Path:
     if source in [model["name"] for model in GAN_MODELS]:
         source = f"{source}-ens"
@@ -52,7 +53,7 @@ def get_data_store_path(
         data_dir_path = Path(settings.ASSETS_DIR_MAP["jobs"])
     else:
         base_dir = Path(settings.ASSETS_DIR_MAP["forecasts"]) / source
-        data_dir_path = base_dir if mask_region is None else base_dir / mask_region
+        data_dir_path = base_dir if mask_region is None or source in ens_ifs_models else base_dir / mask_region
 
     # create directory tree
     if not data_dir_path.exists():
@@ -195,11 +196,12 @@ def save_to_new_filesystem_structure(
     file_path: Path,
     source: cgan_model_literal | cgan_ifs_literal,
     mask_region: str | None = COUNTRY_NAMES[0],
-    min_gbmc_size: int | None = 40 * 1024,
+    min_gbmc_size: int | None = 45 * 1024,
     part_to_replace: str | None = None,
+    ens_ifs_models: list[str] | None = ["cgan-ifs-6h-ens", "cgan-ifs-7d-ens"],
 ) -> None:
-    logger.debug(f"received filesystem migration task for - {mask_region}- {source} - {file_path}")
-    if source == "cgan-ifs-6h-ens" and file_path.stat().st_size / 1024 < min_gbmc_size:
+    logger.debug(f"received filesystem migration task for - {source} - {file_path}")
+    if source in ens_ifs_models and file_path.stat().st_size / 1024 < min_gbmc_size:
         logger.debug(
             f"{file_path.name} migration task skipped due to invalid size of {file_path.stat().st_size / 1024}Kb"
         )
@@ -229,25 +231,26 @@ def save_to_new_filesystem_structure(
                 errors.append(f"failed to save {target_file} with error {error}")
             else:
                 logger.debug(f"succeefully saved dataset file {file_path} to {target_file}")
-                for country_name in COUNTRY_NAMES[1:]:
-                    # create country slices
-                    sliced = slice_dataset_by_bbox(ds=ds, bbox=get_region_extent(shape_name=country_name))
-                    if sliced is None:
-                        errors.append(f"error slicing {file_path.name} for bbox {country_name}")
-                    else:
-                        slice_target = get_dataset_file_path(
-                            source=source,
-                            data_date=data_date,
-                            file_name=fname,
-                            mask_region=country_name,
-                        )
-                        logger.debug(f"migrating dataset slice for {country_name} to {slice_target}")
-                        try:
-                            sliced.to_netcdf(slice_target, mode="w", format="NETCDF4")
-                        except Exception as error:
-                            errors.append(f"failed to save {slice_target} with error {error}")
+                if source != ens_ifs_models:  # split cGAN forecasts by country
+                    for country_name in COUNTRY_NAMES[1:]:
+                        # create country slices
+                        sliced = slice_dataset_by_bbox(ds=ds, bbox=get_region_extent(shape_name=country_name))
+                        if sliced is None:
+                            errors.append(f"error slicing {file_path.name} for bbox {country_name}")
                         else:
-                            logger.debug(f"succeefully migrated dataset slice for {country_name}")
+                            slice_target = get_dataset_file_path(
+                                source=source,
+                                data_date=data_date,
+                                file_name=fname,
+                                mask_region=country_name,
+                            )
+                            logger.debug(f"migrating dataset slice for {country_name} to {slice_target}")
+                            try:
+                                sliced.to_netcdf(slice_target, mode="w", format="NETCDF4")
+                            except Exception as error:
+                                errors.append(f"failed to save {slice_target} with error {error}")
+                            else:
+                                logger.debug(f"succeefully migrated dataset slice for {country_name}")
             if not len(errors):
                 logger.debug(f"removing forecast file {file_path.name} after a successful migration")
                 file_path.unlink(missing_ok=True)
