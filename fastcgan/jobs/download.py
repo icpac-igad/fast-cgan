@@ -292,21 +292,15 @@ def generate_cgan_forecasts(model: str, mask_region: str | None = COUNTRY_NAMES[
             file_name=f"{data_date.strftime('%Y%m%d')}_{init_time}Z.nc",
             mask_region=mask_region,
         )
-        if model == "mvua-kubwa-ens":
-            gan_status = subprocess.call(
-                shell=True,
-                cwd=f'{getenv("WORK_HOME","/opt/cgan")}/ensemble-cgan/dsrnngan',
-                args=f"python forecast_date.py {date_str}",
-            )
-        else:
-            store_path = get_data_store_path(source=gbmc_source, mask_region=mask_region)
-            gan_ifs = str(gbmc_filename).replace(f"{store_path}/", "")
-            logger.debug(f"starting {model} forecast generation with IFS file {gan_ifs}")
-            gan_status = subprocess.call(
-                shell=True,
-                cwd=f'{getenv("WORK_HOME","/opt/cgan")}/ensemble-cgan/dsrnngan',
-                args=f"python test_forecast.py -f {gan_ifs}",
-            )
+        store_path = get_data_store_path(source=gbmc_source, mask_region=mask_region)
+        gan_ifs = str(gbmc_filename).replace(f"{store_path}/", "")
+        logger.debug(f"starting {model} forecast generation with IFS file {gan_ifs}")
+        py_script = "forecast_date.py" if "mvua-kubwa" in model else "test_forecast.py"
+        gan_status = subprocess.call(
+            shell=True,
+            cwd=f'{getenv("WORK_HOME","/opt/cgan")}/ensemble-cgan/dsrnngan',
+            args=f"python {py_script} -f {gan_ifs}",
+        )
         cgan_file_path = get_data_store_path(source="jobs") / model / f"GAN_{date_str}_{init_time}Z.nc"
         if gan_status:
             logger.error(f"failed to generate {model} cGAN forecast for {missing_date}")
