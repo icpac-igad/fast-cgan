@@ -279,34 +279,36 @@ def generate_cgan_forecasts(model: str, mask_region: str | None = COUNTRY_NAMES[
     for missing_date in missing_dates:
         logger.info(f"generating {model} cGAN forecast for {missing_date}")
         date_str, init_time = missing_date.split("_")
-        # generate forecast for date
-        data_date = datetime.strptime(date_str, "%Y%m%d")
-        gbmc_filename = get_dataset_file_path(
-            source=gbmc_source,
-            data_date=data_date,
-            file_name=f"{data_date.strftime('%Y%m%d')}_{init_time}Z.nc",
-            mask_region=mask_region,
-        )
-        store_path = get_data_store_path(source=gbmc_source, mask_region=mask_region)
-        gan_ifs = str(gbmc_filename).replace(f"{store_path}/", "")
-        logger.debug(f"starting {model} forecast generation with IFS file {gan_ifs}")
-        try:
-            gen_cgan_status = subprocess.call(
+        if model == "mvua-kubwa-ens":
+            gan_status = subprocess.call(
+                shell=True,
+                cwd=f'{getenv("WORK_HOME","/opt/cgan")}/ensemble-cgan/dsrnngan',
+                args=f"python forecast_date.py {date_str}",
+            )
+        else:
+            # generate forecast for date
+            data_date = datetime.strptime(date_str, "%Y%m%d")
+            gbmc_filename = get_dataset_file_path(
+                source=gbmc_source,
+                data_date=data_date,
+                file_name=f"{data_date.strftime('%Y%m%d')}_{init_time}Z.nc",
+                mask_region=mask_region,
+            )
+            store_path = get_data_store_path(source=gbmc_source, mask_region=mask_region)
+            gan_ifs = str(gbmc_filename).replace(f"{store_path}/", "")
+            logger.debug(f"starting {model} forecast generation with IFS file {gan_ifs}")
+            gan_status = subprocess.call(
                 shell=True,
                 cwd=f'{getenv("WORK_HOME","/opt/cgan")}/ensemble-cgan/dsrnngan',
                 args=f"python test_forecast.py -f {gan_ifs}",
             )
-        except Exception as error:
-            logger.error(f"failed to generate {model} cGAN forecast for {missing_date} with error {error}")
+        cgan_file_path = get_data_store_path(source="jobs") / model / f"GAN_{date_str}_{init_time}Z.nc"
+        if gan_status:
+            logger.error(f"failed to generate {model} cGAN forecast for {missing_date}")
             gbmc_filename.unlink(missing_ok=True)
+            cgan_file_path.unlink(missing_ok=True)
         else:
-            cgan_file_path = get_data_store_path(source="jobs") / model / f"GAN_{date_str}_{init_time}Z.nc"
-            if gen_cgan_status:
-                logger.error(f"CASCADED ERROR: failed to generate {model} cGAN forecast for {missing_date}")
-                gbmc_filename.unlink(missing_ok=True)
-                cgan_file_path.unlink(missing_ok=True)
-            else:
-                save_to_new_filesystem_structure(file_path=cgan_file_path, source=model, part_to_replace="GAN_")
+            save_to_new_filesystem_structure(file_path=cgan_file_path, source=model, part_to_replace="GAN_")
     set_data_sycn_status(source=model, sync_type="processing", status=False)
 
 
