@@ -271,6 +271,7 @@ def syncronize_open_ifs_forecast_data(
 
 
 def generate_cgan_forecasts(model: str, mask_region: str | None = COUNTRY_NAMES[0]):
+    logger.debug(f"starting cGAN forecast generation for {model} model")
     set_data_sycn_status(source=model, sync_type="processing", status=True)
     gbmc_source = "cgan-ifs-7d-ens" if model == "mvua-kubwa-ens" else "cgan-ifs-6h-ens"
     ifs_dates = sorted(
@@ -279,6 +280,7 @@ def generate_cgan_forecasts(model: str, mask_region: str | None = COUNTRY_NAMES[
     )
     gan_dates = get_gan_forecast_dates(mask_region=mask_region, source=model)
     missing_dates = [data_date for data_date in ifs_dates if data_date not in gan_dates]
+    logger.debug(f"launching forecast generation workers for data dates {' ==> '.join(missing_dates)}")
     for missing_date in missing_dates:
         logger.info(f"generating {model} cGAN forecast for {missing_date}")
         date_str, init_time = missing_date.split("_")
@@ -331,12 +333,10 @@ def post_process_downloaded_cgan_ifs(model: cgan_ifs_literal):
                     )
                     for gbmc_file in gbmc_files:
                         save_to_new_filesystem_structure(file_path=gbmc_file, source=model, part_to_replace="IFS_")
-                    generate_cgan_forecasts(
-                        model=("jurre-brishti-ens" if model == "cgan-ifs-6h-ens" else "mvua-kubwa-ens")
-                    )
                 # purge invalid files
                 for file_path in downloads_path.iterdir():
                     file_path.unlink(missing_ok=True)
+            generate_cgan_forecasts(model=("jurre-brishti-ens" if model == "cgan-ifs-6h-ens" else "mvua-kubwa-ens"))
             # break the loop
             break
         # sleep for 10 minutes
