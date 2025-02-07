@@ -282,6 +282,14 @@ def generate_cgan_forecasts(model: str, mask_region: str | None = COUNTRY_NAMES[
     for missing_date in missing_dates:
         logger.info(f"generating {model} cGAN forecast for {missing_date}")
         date_str, init_time = missing_date.split("_")
+        # generate forecast for date
+        data_date = datetime.strptime(date_str, "%Y%m%d")
+        gbmc_filename = get_dataset_file_path(
+            source=gbmc_source,
+            data_date=data_date,
+            file_name=f"{data_date.strftime('%Y%m%d')}_{init_time}Z.nc",
+            mask_region=mask_region,
+        )
         if model == "mvua-kubwa-ens":
             gan_status = subprocess.call(
                 shell=True,
@@ -289,14 +297,6 @@ def generate_cgan_forecasts(model: str, mask_region: str | None = COUNTRY_NAMES[
                 args=f"python forecast_date.py {date_str}",
             )
         else:
-            # generate forecast for date
-            data_date = datetime.strptime(date_str, "%Y%m%d")
-            gbmc_filename = get_dataset_file_path(
-                source=gbmc_source,
-                data_date=data_date,
-                file_name=f"{data_date.strftime('%Y%m%d')}_{init_time}Z.nc",
-                mask_region=mask_region,
-            )
             store_path = get_data_store_path(source=gbmc_source, mask_region=mask_region)
             gan_ifs = str(gbmc_filename).replace(f"{store_path}/", "")
             logger.debug(f"starting {model} forecast generation with IFS file {gan_ifs}")
