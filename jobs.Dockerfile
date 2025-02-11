@@ -43,11 +43,10 @@ WORKDIR ${WORK_HOME}
 ENV PATH=${WORK_HOME}/.local/bin:$PATH
 
 RUN git clone ${GAN_REPO} -b ${GAN_BRANCH} ${WORK_HOME}/ensemble-cgan && \
-    cd ${WORK_HOME}/ensemble-cgan && pip install --no-cache-dir -e .
+    cd ${WORK_HOME}/ensemble-cgan && pip install --upgrade pip && pip install --no-cache-dir -e .
 
 COPY --chown=${USER_NAME}:root ./pyproject.toml ./poetry.lock ./README.md ${WORK_HOME}/
 COPY --chown=${USER_NAME}:root ./fastcgan ${WORK_HOME}/fastcgan
-RUN pip install --no-cache-dir -e . && \
-    touch ${WORK_HOME}/.env
+RUN pip install --no-cache-dir -e . && touch ${WORK_HOME}/.env
 
 CMD ["python", "fastcgan/jobs/manager.py"]
