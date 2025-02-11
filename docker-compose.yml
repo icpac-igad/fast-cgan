@@ -61,7 +61,7 @@ services:
       - ${LOGS_DIR:-./data/logs}:${APP_LOGS_DIR:-/opt/cgan/logs}
 
   jurre-brishti-ens:
-    image: ${JOBS_IMAGE_NAME:-icpac/cgan-jobs-pipeline}
+    image: ${JURRE_IMAGE_NAME:-icpac/jurre-brishti-pipeline}
     container_name: ${JURRE_ENS_JOBS_CNTR_NAME:-jurre-brishti-ens-jobs}
     build:
       context: .
@@ -92,7 +92,7 @@ services:
       - ${IFS_SERVER_KEY:-./data/private/id_rsa.key}:${IFS_PRIVATE_KEY:-/srv/ssl/private.key}:ro
 
   jurre-brishti-counts:
-    image: ${JOBS_IMAGE_NAME:-icpac/cgan-jobs-pipeline}
+    image: ${JURRE_IMAGE_NAME:-icpac/jurre-brishti-pipeline}
     container_name: ${JURRE_ENS_JOBS_CNTR_NAME:-jurre-brishti-counts-jobs}
     build:
       context: .
@@ -123,7 +123,7 @@ services:
       - ${IFS_SERVER_KEY:-./data/private/id_rsa.key}:${IFS_PRIVATE_KEY:-/srv/ssl/private.key}:ro
 
   mvua-kubwa-ens:
-    image: ${JOBS_IMAGE_NAME:-icpac/cgan-jobs-pipeline}
+    image: ${MVUA_IMAGE_NAME:-icpac/mvua-kubwa-pipeline}
     container_name: ${MVUA_ENS_JOBS_CNTR_NAME:-mvua-kubwa-ens-jobs}
     build:
       context: .
@@ -154,7 +154,7 @@ services:
       - ${IFS_SERVER_KEY:-./data/private/id_rsa.key}:${IFS_PRIVATE_KEY:-/srv/ssl/private.key}:ro
 
   mvua-kubwa-counts:
-    image: ${JOBS_IMAGE_NAME:-icpac/cgan-jobs-pipeline}
+    image: ${MVUA_IMAGE_NAME:-icpac/mvua-kubwa-pipeline}
     container_name: ${MVUA_ENS_JOBS_CNTR_NAME:-mvua-kubwa-counts-jobs}
     build:
       context: .

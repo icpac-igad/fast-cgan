@@ -344,8 +344,6 @@ def syncronize_post_processed_ifs_data(model: cgan_ifs_literal, mask_region: str
         set_data_sycn_status(source=model, sync_type="download", status=True)
         sync_sftp_data_files(model=model)
         set_data_sycn_status(source=model, sync_type="download", status=False)
-        # start post-processing task for all downloaded IFS data including forecast production
-        post_process_downloaded_cgan_ifs(model=model)
 
 
 if __name__ == "__main__":
@@ -357,6 +355,14 @@ if __name__ == "__main__":
         type=str,
         default="open-ifs",
         help="forecast model or process to be executed. options are: open-ifs,jurre-brishti,mvua-kubwa",
+    )
+    parser.add_argument(
+        "-c",
+        "--command",
+        dest="command",
+        type=str,
+        help="command to be executed. either download or process",
+        default="download",
     )
     parser.add_argument(
         "-d",

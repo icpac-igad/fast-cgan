@@ -196,7 +196,7 @@ def save_to_new_filesystem_structure(
     file_path: Path,
     source: cgan_model_literal | cgan_ifs_literal,
     mask_region: str | None = COUNTRY_NAMES[0],
-    min_gbmc_size: int | None = 45 * 1024,
+    min_gbmc_size: int | None = 42 * 1024,
     part_to_replace: str | None = None,
     ens_ifs_models: list[str] | None = ["cgan-ifs-6h-ens", "cgan-ifs-7d-ens"],
 ) -> None:
