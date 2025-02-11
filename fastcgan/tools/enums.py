@@ -29,7 +29,6 @@ class ValidStartTime(Enum):
     one_two = "12"
     one_eight = "18"
     zero = "0"
-    combine = "all"
 
 
 class RouterTag(Enum):

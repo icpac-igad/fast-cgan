@@ -27,7 +27,7 @@ class OpenIfsParams(CustomStyleForecastProduct):
 
 
 class BaseGanForecastParams(CustomStyleForecastProduct):
-    start_time: ValidStartTime | None = ValidStartTime.combine
+    start_time: ValidStartTime | None = ValidStartTime.zero
 
 
 class GanForecastParams(BaseGanForecastParams):

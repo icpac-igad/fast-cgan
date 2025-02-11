@@ -40,14 +40,6 @@ async def get_forecast_maps_path(
         fname_str += f"-chance_threshold_{threshold:.2f}".replace(".", "_")
     if start_time is None:
         return [get_cached_file_base_path(source=source) / f"{fname_str}.{extension}"]
-    if start_time.value == "all":
-        start_hours = ["06", "12", "18", "00"]
-        maps_paths = [
-            get_cached_file_base_path(source=source) / f"{fname_str}_{start_hour}.{extension}"
-            for start_hour in start_hours
-        ]
-        maps_paths.append(get_cached_file_base_path(source=source) / f"{fname_str}.{extension}")
-        return maps_paths
     return [get_cached_file_base_path(source=source) / f"{fname_str}_{start_time.value.rjust(2, '0')}.{extension}"]
 
 

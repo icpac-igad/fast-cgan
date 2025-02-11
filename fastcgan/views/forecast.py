@@ -59,14 +59,17 @@ async def open_ifs_forecast(
     maps_exist = [file_path.exists() for file_path in maps_path]
     if not all(maps_exist if len(maps_path) == 1 else maps_exist[:-1]):
         data_store = get_data_store_path(source=source)
-        data = load_open_ifs_data(
-            key=vis_param.name,
-            forecast_init_date=data_date_obj,
-            data_dir=str(data_store),
-            mask_region=mask_area,
-            status_updates=False,
-            cgan_ui_fs=True,
-        )
+        try:
+            data = load_open_ifs_data(
+                key=vis_param.name,
+                forecast_init_date=data_date_obj,
+                data_dir=str(data_store),
+                mask_region=mask_area,
+                status_updates=False,
+                cgan_ui_fs=True,
+            )
+        except Exception:
+            return []
         plot_open_ifs_forecast(
             data=data,
             style=color_style,
@@ -105,14 +108,17 @@ async def open_ifs_forecast_ensemble(
     )
     if not maps_path[0].exists():
         data_store = get_data_store_path(source=source)
-        data = load_open_ifs_data(
-            key=vis_param.name,
-            forecast_init_date=data_date_obj,
-            data_dir=str(data_store),
-            mask_region=mask_area,
-            status_updates=False,
-            cgan_ui_fs=True,
-        )
+        try:
+            data = load_open_ifs_data(
+                key=vis_param.name,
+                forecast_init_date=data_date_obj,
+                data_dir=str(data_store),
+                mask_region=mask_area,
+                status_updates=False,
+                cgan_ui_fs=True,
+            )
+        except Exception:
+            return []
         plot_ifs_forecast_ensemble(
             data=data,
             style=color_style,
@@ -153,14 +159,17 @@ async def cgan_forecast(
     maps_exist = [file_path.exists() for file_path in maps_path]
     if not all(maps_exist if len(maps_path) == 1 else maps_exist[:-1]):
         data_store = get_data_store_path(source=model)
-        data = load_GAN_forecast(
-            model=f"{model}-ens",
-            init_date=data_date_obj,
-            init_time=start_time.value.rjust(2, "0"),
-            data_dir=str(data_store),
-            mask_region=mask_area,
-            cgan_ui_fs=True,
-        )
+        try:
+            data = load_GAN_forecast(
+                model=f"{model}-ens",
+                init_date=data_date_obj,
+                init_time=start_time.value.rjust(2, "0"),
+                data_dir=str(data_store),
+                mask_region=mask_area,
+                cgan_ui_fs=True,
+            )
+        except Exception:
+            return []
         plot_GAN_forecast(
             data=data,
             style=color_style,
@@ -178,13 +187,12 @@ async def cgan_forecast_ensemble(
     model: cgan_model_literal | None = GAN_MODELS[0]["name"],
     vis_param: IfsDataParameter | None = IfsDataParameter.tp,
     plot_units: PrecipitationUnit | None = PrecipitationUnit.hour6,
-    start_time: ValidStartTime | None = ValidStartTime.six,
+    start_time: ValidStartTime | None = ValidStartTime.zero,
     forecast_date: str | None = None,
     mask_area: str | None = COUNTRY_NAMES[0],
     color_style: str | None = COLOR_SCHEMES[0],
     max_ens_plots: int | None = 50,
 ) -> list[Path]:
-    start_time = start_time if start_time != ValidStartTime.combine else ValidStartTime.six
     if forecast_date is None:
         forecast_date = get_forecast_data_dates(
             mask_region=COUNTRY_NAMES[0],
@@ -204,14 +212,17 @@ async def cgan_forecast_ensemble(
     )
     if not maps_path[0].exists():
         data_store = get_data_store_path(source=model)
-        data = load_GAN_forecast(
-            model=f"{model}-ens",
-            init_date=data_date_obj,
-            init_time=start_time.value.rjust(2, "0"),
-            data_dir=str(data_store),
-            mask_region=mask_area,
-            cgan_ui_fs=True,
-        )
+        try:
+            data = load_GAN_forecast(
+                model=f"{model}-ens",
+                init_date=data_date_obj,
+                init_time=start_time.value.rjust(2, "0"),
+                data_dir=str(data_store),
+                mask_region=mask_area,
+                cgan_ui_fs=True,
+            )
+        except Exception:
+            return []
         plot_GAN_ensemble(
             data=data,
             valid_time_start_hour=start_time.value,
@@ -254,14 +265,17 @@ async def cgan_threshold_chance(
     )
     if not maps_path[0].exists():
         data_store = get_data_store_path(source=model)
-        data = load_GAN_forecast(
-            model=f"{model}-ens",
-            init_date=data_date_obj,
-            init_time=start_time.value.rjust(2, "0"),
-            data_dir=str(data_store),
-            mask_region=mask_area,
-            cgan_ui_fs=True,
-        )
+        try:
+            data = load_GAN_forecast(
+                model=f"{model}-ens",
+                init_date=data_date_obj,
+                init_time=start_time.value.rjust(2, "0"),
+                data_dir=str(data_store),
+                mask_region=mask_area,
+                cgan_ui_fs=True,
+            )
+        except Exception:
+            return []
         plot_GAN_threshold_chance(
             data=data,
             style=color_style,
@@ -323,13 +337,16 @@ async def cgan_local_histogram(
 
         if not hist_path.exists():
             data_store = get_data_store_path(source=model)
-            data = load_GAN_forecast(
-                model=f"{model}-ens",
-                init_date=data_date_obj,
-                data_dir=str(data_store),
-                mask_region=mask_area,
-                cgan_ui_fs=True,
-            )
+            try:
+                data = load_GAN_forecast(
+                    model=f"{model}-ens",
+                    init_date=data_date_obj,
+                    data_dir=str(data_store),
+                    mask_region=mask_area,
+                    cgan_ui_fs=True,
+                )
+            except Exception:
+                return []
             plot_GAN_local_histograms(
                 data=data,
                 location_name=location,
