@@ -62,7 +62,7 @@ async def cgan_forecast(
             data = load_GAN_forecast(
                 model=f"{model}-ens",
                 init_date=data_date_obj,
-                init_time=init_time.value.rjust(2, "0"),
+                init_time=init_time.value.replace("h", ""),
                 data_dir=str(data_store).replace(f"/{model}-ens", ""),
                 mask_region=mask_area,
                 cgan_ui_fs=True,
@@ -101,6 +101,8 @@ async def cgan_forecast_ensemble(
             mask_region=COUNTRY_NAMES[0],
             source=model,
         )[0]
+    if valid_time is None:
+        valid_time = ValidityTime.plus30h if model == "jurre-brishti" else ValidityTime.plus6h
     data_date_obj = datetime.strptime(forecast_date, "%b %d, %Y")
     maps_path = await get_forecast_maps_path(
         source=model,
@@ -120,7 +122,7 @@ async def cgan_forecast_ensemble(
             data = load_GAN_forecast(
                 model=f"{model}-ens",
                 init_date=data_date_obj,
-                init_time=init_time.value.rjust(2, "0"),
+                init_time=init_time.value.replace("h", ""),
                 data_dir=str(data_store).replace(f"/{model}-ens", ""),
                 mask_region=mask_area,
                 cgan_ui_fs=True,
@@ -160,6 +162,8 @@ async def cgan_threshold_chance(
             mask_region=COUNTRY_NAMES[0],
             source=model,
         )[0]
+    if valid_time is None:
+        valid_time = ValidityTime.plus30h if model == "jurre-brishti" else ValidityTime.plus6h
     data_date_obj = datetime.strptime(forecast_date, "%b %d, %Y")
     maps_path = await get_forecast_maps_path(
         source=model,
@@ -179,7 +183,7 @@ async def cgan_threshold_chance(
             data = load_GAN_forecast(
                 model=f"{model}-ens",
                 init_date=data_date_obj,
-                init_time=init_time.value.rjust(2, "0"),
+                init_time=init_time.value.replace("h", ""),
                 data_dir=str(data_store).replace(f"/{model}-ens", ""),
                 mask_region=mask_area,
                 cgan_ui_fs=True,

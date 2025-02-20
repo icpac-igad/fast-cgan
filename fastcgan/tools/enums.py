@@ -32,10 +32,10 @@ class MapColorScheme(Enum):
 
 
 class InitializationTime(Enum):
-    midnight = "00"
-    morning = "06"
-    midday = "12"
-    evening = "18"
+    midnight = "00h"
+    morning = "06h"
+    midday = "12h"
+    evening = "18h"
 
 
 class ValidityTime(Enum):
