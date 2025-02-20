@@ -2,149 +2,47 @@ from datetime import datetime
 from pathlib import Path
 
 import xarray as xr
-from show_forecasts.constants import COLOR_SCHEMES, COUNTRY_NAMES
+from loguru import logger
+from show_forecasts.constants import COUNTRY_NAMES
 from show_forecasts.show_cGAN import (
     load_GAN_forecast,
     plot_GAN_ensemble,
     plot_GAN_forecast,
-    plot_GAN_local_histograms,
     plot_GAN_threshold_chance,
-    plot_location_marker,
-)
-from show_forecasts.show_IFS_open_data import load_forecast as load_open_ifs_data
-from show_forecasts.show_IFS_open_data import plot_forecast as plot_open_ifs_forecast
-from show_forecasts.show_IFS_open_data import (
-    plot_forecast_ensemble as plot_ifs_forecast_ensemble,
 )
 
-from fastcgan.jobs.stubs import cgan_model_literal, open_ifs_literal
+from fastcgan.jobs.stubs import cgan_model_literal
 from fastcgan.jobs.utils import get_data_store_path, get_forecast_data_dates
 from fastcgan.tools.constants import GAN_MODELS
 from fastcgan.tools.enums import (
     AccumulationTime,
     IfsDataParameter,
+    InitializationTime,
+    MapColorScheme,
     PrecipitationUnit,
-    ValidStartTime,
+    ValidityTime,
 )
-from fastcgan.views.tools import (
-    get_forecast_maps_path,
-    get_local_histogram_chart,
-    get_location_marker_map,
-)
-
-
-async def open_ifs_forecast(
-    model: open_ifs_literal | None = None,
-    vis_param: IfsDataParameter | None = IfsDataParameter.tp,
-    plot_units: PrecipitationUnit | None = PrecipitationUnit.hour6,
-    forecast_date: str | None = None,
-    mask_area: str | None = COUNTRY_NAMES[0],
-    color_style: str | None = COLOR_SCHEMES[0],
-) -> list[list[Path], xr.Dataset | None]:
-    source = "open-ifs"
-    if forecast_date is None:
-        forecast_date = get_forecast_data_dates(
-            mask_region=mask_area,
-            source=source,
-        )[0]
-    data_date_obj = datetime.strptime(forecast_date, "%b %d, %Y")
-    maps_path = await get_forecast_maps_path(
-        source=source,
-        vis_param=vis_param,
-        plot_units=plot_units,
-        data_date=data_date_obj,
-        mask_area=mask_area,
-        color_style=color_style,
-    )
-    maps_exist = [file_path.exists() for file_path in maps_path]
-    if not all(maps_exist if len(maps_path) == 1 else maps_exist[:-1]):
-        data_store = get_data_store_path(source=source)
-        try:
-            data = load_open_ifs_data(
-                key=vis_param.name,
-                forecast_init_date=data_date_obj,
-                data_dir=str(data_store),
-                mask_region=mask_area,
-                status_updates=False,
-                cgan_ui_fs=True,
-            )
-        except Exception:
-            return []
-        plot_open_ifs_forecast(
-            data=data,
-            style=color_style,
-            plot_units=plot_units.value,
-            region=mask_area,
-            file_name=str(maps_path[-1]),
-            show_plot=False,
-        )
-    return maps_path
-
-
-async def open_ifs_forecast_ensemble(
-    model: open_ifs_literal | None = None,
-    vis_param: IfsDataParameter | None = IfsDataParameter.tp,
-    plot_units: PrecipitationUnit | None = PrecipitationUnit.hour6,
-    forecast_date: str | None = None,
-    mask_area: str | None = COUNTRY_NAMES[0],
-    color_style: str | None = COLOR_SCHEMES[0],
-) -> list[Path]:
-    vis_param = IfsDataParameter.tp
-    source = "open-ifs"
-    if forecast_date is None:
-        forecast_date = get_forecast_data_dates(
-            mask_region=COUNTRY_NAMES[0],
-            source=source,
-        )[0]
-    data_date_obj = datetime.strptime(forecast_date, "%b %d, %Y")
-    maps_path = await get_forecast_maps_path(
-        source=source,
-        vis_param=vis_param,
-        plot_units=plot_units,
-        data_date=data_date_obj,
-        mask_area=mask_area,
-        color_style=color_style,
-        ensemble=True,
-    )
-    if not maps_path[0].exists():
-        data_store = get_data_store_path(source=source)
-        try:
-            data = load_open_ifs_data(
-                key=vis_param.name,
-                forecast_init_date=data_date_obj,
-                data_dir=str(data_store),
-                mask_region=mask_area,
-                status_updates=False,
-                cgan_ui_fs=True,
-            )
-        except Exception:
-            return []
-        plot_ifs_forecast_ensemble(
-            data=data,
-            style=color_style,
-            plot_units=plot_units.value,
-            region=mask_area,
-            file_name=str(maps_path[-1]),
-            show_plot=False,
-        )
-    return maps_path
+from fastcgan.views.tools import get_forecast_maps_path
 
 
 async def cgan_forecast(
     model: cgan_model_literal | None = GAN_MODELS[0]["name"],
     vis_param: IfsDataParameter | None = IfsDataParameter.tp,
-    plot_units: PrecipitationUnit | None = PrecipitationUnit.hour6,
-    acc_time: AccumulationTime | None = AccumulationTime.hour6,
-    start_time: ValidStartTime | None = ValidStartTime.six,
+    plot_units: PrecipitationUnit | None = PrecipitationUnit.half_day,
+    acc_time: AccumulationTime | None = AccumulationTime.half_day,
+    init_time: InitializationTime | None = InitializationTime.midnight,
+    valid_time: ValidityTime | None = None,
     forecast_date: str | None = None,
     mask_area: str | None = COUNTRY_NAMES[0],
-    color_style: str | None = COLOR_SCHEMES[0],
+    color_style: MapColorScheme | None = MapColorScheme.icpac,
 ) -> list[list[Path], xr.Dataset | None]:
     if forecast_date is None:
         forecast_date = get_forecast_data_dates(
             mask_region=COUNTRY_NAMES[0],
             source=model,
         )[0]
+    if valid_time is None:
+        valid_time = ValidityTime.plus30h if model == "jurre-brishti" else ValidityTime.plus6h
     data_date_obj = datetime.strptime(forecast_date, "%b %d, %Y")
     maps_path = await get_forecast_maps_path(
         source=model,
@@ -153,8 +51,9 @@ async def cgan_forecast(
         data_date=data_date_obj,
         mask_area=mask_area,
         color_style=color_style,
-        start_time=start_time,
+        init_time=init_time,
         acc_time=acc_time,
+        valid_time=valid_time,
     )
     maps_exist = [file_path.exists() for file_path in maps_path]
     if not all(maps_exist if len(maps_path) == 1 else maps_exist[:-1]):
@@ -163,19 +62,21 @@ async def cgan_forecast(
             data = load_GAN_forecast(
                 model=f"{model}-ens",
                 init_date=data_date_obj,
-                init_time=start_time.value.rjust(2, "0"),
-                data_dir=str(data_store),
+                init_time=init_time.value.rjust(2, "0"),
+                data_dir=str(data_store).replace(f"/{model}-ens", ""),
                 mask_region=mask_area,
                 cgan_ui_fs=True,
             )
-        except Exception:
+        except Exception as err:
+            logger.error(f"failed to plot cGAN forecast with error: {err}")
             return []
         plot_GAN_forecast(
             data=data,
-            style=color_style,
+            model=f"{model}-ens",
+            style=color_style.value,
             plot_units=plot_units.value,
             accumulation_time=acc_time.value,
-            valid_time_start_hour=start_time.value,
+            valid_time_start_hour=valid_time.value,
             region=mask_area,
             show_plot=False,
             file_name=str(maps_path[-1]),
@@ -186,12 +87,14 @@ async def cgan_forecast(
 async def cgan_forecast_ensemble(
     model: cgan_model_literal | None = GAN_MODELS[0]["name"],
     vis_param: IfsDataParameter | None = IfsDataParameter.tp,
-    plot_units: PrecipitationUnit | None = PrecipitationUnit.hour6,
-    start_time: ValidStartTime | None = ValidStartTime.zero,
+    plot_units: PrecipitationUnit | None = PrecipitationUnit.half_day,
+    init_time: InitializationTime | None = InitializationTime.midnight,
+    valid_time: ValidityTime | None = None,
     forecast_date: str | None = None,
     mask_area: str | None = COUNTRY_NAMES[0],
-    color_style: str | None = COLOR_SCHEMES[0],
+    color_style: MapColorScheme | None = MapColorScheme.icpac,
     max_ens_plots: int | None = 50,
+    **kwagrs,
 ) -> list[Path]:
     if forecast_date is None:
         forecast_date = get_forecast_data_dates(
@@ -203,7 +106,8 @@ async def cgan_forecast_ensemble(
         source=model,
         vis_param=vis_param,
         plot_units=plot_units,
-        start_time=start_time,
+        init_time=init_time,
+        valid_time=valid_time,
         data_date=data_date_obj,
         mask_area=mask_area,
         color_style=color_style,
@@ -216,17 +120,19 @@ async def cgan_forecast_ensemble(
             data = load_GAN_forecast(
                 model=f"{model}-ens",
                 init_date=data_date_obj,
-                init_time=start_time.value.rjust(2, "0"),
-                data_dir=str(data_store),
+                init_time=init_time.value.rjust(2, "0"),
+                data_dir=str(data_store).replace(f"/{model}-ens", ""),
                 mask_region=mask_area,
                 cgan_ui_fs=True,
             )
-        except Exception:
+        except Exception as err:
+            logger.error(f"failed to plot cGAN ensemble forecast with error: {err}")
             return []
         plot_GAN_ensemble(
             data=data,
-            valid_time_start_hour=start_time.value,
-            style=color_style,
+            model=f"{model}-ens",
+            valid_time_start_hour=valid_time.value,
+            style=color_style.value,
             plot_units=plot_units.value,
             region=mask_area,
             file_name=str(maps_path[-1]),
@@ -240,12 +146,14 @@ async def cgan_threshold_chance(
     model: cgan_model_literal | None = GAN_MODELS[0]["name"],
     threshold: float | None = 5,
     vis_param: IfsDataParameter | None = IfsDataParameter.tp,
-    plot_units: PrecipitationUnit | None = PrecipitationUnit.hour6,
-    start_time: ValidStartTime | None = ValidStartTime.six,
+    plot_units: PrecipitationUnit | None = PrecipitationUnit.half_day,
+    init_time: InitializationTime | None = InitializationTime.midnight,
+    valid_time: ValidityTime | None = None,
     forecast_date: str | None = None,
     mask_area: str | None = COUNTRY_NAMES[0],
-    color_style: str | None = COLOR_SCHEMES[0],
+    color_style: MapColorScheme | None = MapColorScheme.icpac,
     show_percentages: bool | None = None,
+    **kwargs,
 ) -> list[Path]:
     if forecast_date is None:
         forecast_date = get_forecast_data_dates(
@@ -262,6 +170,8 @@ async def cgan_threshold_chance(
         color_style=color_style,
         threshold=threshold,
         show_percentages=show_percentages,
+        init_time=init_time,
+        valid_time=valid_time,
     )
     if not maps_path[0].exists():
         data_store = get_data_store_path(source=model)
@@ -269,97 +179,24 @@ async def cgan_threshold_chance(
             data = load_GAN_forecast(
                 model=f"{model}-ens",
                 init_date=data_date_obj,
-                init_time=start_time.value.rjust(2, "0"),
-                data_dir=str(data_store),
+                init_time=init_time.value.rjust(2, "0"),
+                data_dir=str(data_store).replace(f"/{model}-ens", ""),
                 mask_region=mask_area,
                 cgan_ui_fs=True,
             )
-        except Exception:
+        except Exception as err:
+            logger.error(f"failed to plot cGAN threshold exceedence forecast with error: {err}")
             return []
         plot_GAN_threshold_chance(
             data=data,
-            style=color_style,
+            model=f"{model}-ens",
+            style=color_style.value,
             threshold=threshold,
             plot_units=plot_units.value,
-            valid_time_start_hour=start_time.value,
+            valid_time_start_hour=valid_time.value,
             show_percentages=show_percentages,
             region=mask_area,
             file_name=str(maps_path[-1]),
             show_plot=False,
         )
     return maps_path
-
-
-async def cgan_local_histogram(
-    model: cgan_model_literal | None = GAN_MODELS[0]["name"],
-    forecast_date: str | None = None,
-    location: str | None = "LatLng",
-    country: str | None = None,
-    latitude: float | None = None,
-    longitude: float | None = None,
-    plot_units: PrecipitationUnit | None = PrecipitationUnit.hour6,
-    num_bins: int | None = 10,
-    probability: float | None = None,
-    mask_area: str | None = COUNTRY_NAMES[0],
-) -> list[Path]:
-    map_images = []
-    marker_map = await get_location_marker_map(
-        location=location, latitude=latitude, longitude=longitude, region=country
-    )
-    if not marker_map.exists():
-        plot_location_marker(
-            location_name=location,
-            region=country,
-            latitude=latitude,
-            longitude=longitude,
-            file_name=str(marker_map),
-            show_plot=False,
-        )
-
-    if marker_map.exists():
-        map_images.append(marker_map)
-        if forecast_date is None:
-            forecast_date = get_forecast_data_dates(
-                mask_region=COUNTRY_NAMES[0],
-                source=model,
-            )[0]
-        data_date_obj = datetime.strptime(forecast_date, "%b %d, %Y")
-        hist_path = await get_local_histogram_chart(
-            data_date=data_date_obj,
-            location=location,
-            country=country,
-            latitude=latitude,
-            longitude=longitude,
-            plot_units=plot_units,
-            num_bins=num_bins,
-            probability=probability,
-        )
-
-        if not hist_path.exists():
-            data_store = get_data_store_path(source=model)
-            try:
-                data = load_GAN_forecast(
-                    model=f"{model}-ens",
-                    init_date=data_date_obj,
-                    data_dir=str(data_store),
-                    mask_region=mask_area,
-                    cgan_ui_fs=True,
-                )
-            except Exception:
-                return []
-            plot_GAN_local_histograms(
-                data=data,
-                location_name=location,
-                country=country,
-                latitude=latitude,
-                longitude=longitude,
-                plot_units=plot_units.value,
-                probability=probability,
-                file_name=str(hist_path),
-                show_plot=False,
-            )
-
-        if hist_path.exists():
-            map_images.append(hist_path)
-
-    return map_images

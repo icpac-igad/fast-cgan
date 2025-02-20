@@ -3,20 +3,15 @@ from contextlib import _AsyncGeneratorContextManager, asynccontextmanager
 from typing import Any
 
 import anyio
-import fastapi
 import redis.asyncio as redis
 from arq import create_pool
 from arq.connections import RedisSettings
-from fastapi import APIRouter, FastAPI
-from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
-from fastapi.openapi.utils import get_openapi
+from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
-from fastcgan.db.database import Base  # noqa: F401
-from fastcgan.db.database import async_db_engine as engine  # noqa: F401
 from fastcgan.db.schema import *  # noqa: F403
 from fastcgan.middleware.client_cache_middleware import ClientCacheMiddleware
 from fastcgan.routes import limiter
@@ -26,6 +21,7 @@ from fastcgan.tools.config import (
     ClientSideCacheSettings,
     EnvironmentOption,
     EnvironmentSettings,
+    OpenapiSettings,
     PostgresSettings,
     RedisCacheSettings,
     RedisQueueSettings,
@@ -126,6 +122,7 @@ def create_application(
         | RedisQueueSettings
         | RedisRateLimiterSettings
         | EnvironmentSettings
+        | OpenapiSettings
     ),
     **kwargs: Any,
 ) -> FastAPI:
@@ -179,8 +176,14 @@ def create_application(
         }
         kwargs.update(to_update)
 
-    if isinstance(settings, EnvironmentSettings):
-        kwargs.update({"docs_url": None, "redoc_url": None, "openapi_url": None})
+    if isinstance(settings, OpenapiSettings):
+        kwargs.update(
+            {
+                "docs_url": settings.DOCS_URL,
+                "redoc_url": settings.REDOC_URL,
+                "openapi_url": settings.OPENAPI_URL,
+            }
+        )
 
     lifespan = lifespan_factory(settings)
 
@@ -191,31 +194,6 @@ def create_application(
 
     if isinstance(settings, ClientSideCacheSettings):
         application.add_middleware(ClientCacheMiddleware, max_age=settings.CLIENT_CACHE_MAX_AGE)
-
-    if isinstance(settings, EnvironmentSettings):
-        docs_router = APIRouter()
-
-        @docs_router.get("/redoc", include_in_schema=False)
-        async def get_redoc_documentation() -> fastapi.responses.HTMLResponse:
-            return get_redoc_html(openapi_url=f"{settings.APP_SUBPATH}/openapi.json", title="docs")
-
-        @docs_router.get("/openapi.json", include_in_schema=False)
-        async def openapi() -> dict[str, Any]:
-            out: dict = get_openapi(
-                title=application.title,
-                version=application.version,
-                routes=application.routes,
-            )
-            return out
-
-        # allow swagger documentation in dev and local mode, disable in production
-        if settings.ENVIRONMENT != EnvironmentOption.PRODUCTION:
-
-            @docs_router.get("/docs", include_in_schema=False)
-            async def get_swagger_documentation() -> fastapi.responses.HTMLResponse:
-                return get_swagger_ui_html(openapi_url=f"{settings.APP_SUBPATH}/openapi.json", title="docs")
-
-            application.include_router(docs_router)
 
     if isinstance(settings, AssetPathSettings):
         if settings.ENVIRONMENT != EnvironmentOption.PRODUCTION:

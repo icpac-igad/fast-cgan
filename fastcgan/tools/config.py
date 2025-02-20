@@ -1,6 +1,5 @@
 import os
 from enum import Enum
-from json import loads
 from pathlib import Path
 from typing import Literal
 
@@ -29,6 +28,12 @@ class AppSettings(BaseSettings):
     CONTACT_EMAIL: str | None = config("CONTACT_EMAIL", default="developer@icpac.net")
     MASK_REGION: str | None = config("MASK_REGION", default="East Africa")
     USE_UI_FS: bool | None = config("USE_UI_FS", default=True)
+
+
+class OpenapiSettings(BaseSettings):
+    OPENAPI_URL: str | None = config("OPENAPI_URL", default=None)
+    DOCS_URL: str | None = config("DOCS_URL", default=None)
+    REDOC_URL: str | None = config("REDOC_URL", default=None)
 
 
 class AssetPathSettings(BaseSettings):
@@ -107,6 +112,7 @@ class EnvironmentSettings(BaseSettings):
 
 class Settings(
     AppSettings,
+    OpenapiSettings,
     AssetPathSettings,
     PostgresSettings,
     CryptSettings,
@@ -121,11 +127,6 @@ class Settings(
 
 
 settings = Settings()
-
-
-def get_major_towns_data():
-    with open(f"{settings.APP_DUMPS_DIR}/ea-major-towns.json") as dp:
-        return loads(dp.read())
 
 
 def get_asset_dir_path(asset: Literal["cache"]) -> Path:

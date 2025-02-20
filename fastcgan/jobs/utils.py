@@ -12,18 +12,11 @@ from show_forecasts.constants import (
     LEAD_END_HOUR,
     LEAD_START_HOUR,
 )
-from show_forecasts.data_utils import get_locations_data, get_region_extent
+from show_forecasts.data_utils import get_region_extent
 
 from fastcgan.jobs.stubs import cgan_ifs_literal, cgan_model_literal, open_ifs_literal
 from fastcgan.tools.config import settings
 from fastcgan.tools.constants import ACCUMULATION_UNITS, GAN_MODELS
-
-
-def get_locations_data_for_region(region: str | None = None):
-    locations = get_locations_data()
-    if region is None or region == COUNTRY_NAMES[0]:
-        return locations
-    return [location for location in locations if location["country"] == region]
 
 
 def get_possible_forecast_dates(data_date: str | None = None, dateback: int | None = 4) -> list[datetime.date]:

@@ -5,8 +5,10 @@ from fastcgan.tools.config import get_cached_file_base_path
 from fastcgan.tools.enums import (
     AccumulationTime,
     IfsDataParameter,
+    InitializationTime,
+    MapColorScheme,
     PrecipitationUnit,
-    ValidStartTime,
+    ValidityTime,
 )
 
 
@@ -16,8 +18,9 @@ async def get_forecast_maps_path(
     plot_units: PrecipitationUnit,
     data_date: datetime,
     mask_area: str,
-    color_style: str,
-    start_time: ValidStartTime | None = None,
+    color_style: MapColorScheme,
+    valid_time: ValidityTime | None = None,
+    init_time: InitializationTime | None = None,
     acc_time: AccumulationTime | None = None,
     threshold: float | None = None,
     show_percentages: bool | None = False,
@@ -27,20 +30,23 @@ async def get_forecast_maps_path(
 ) -> list[Path]:
     data_date_str = data_date.strftime("%Y_%m_%d")
     fname_str = (
-        f"{source.replace('-','_')}_ens-{vis_param.value.lower().replace(' ','_')}-{plot_units.value.replace('/','_')}"
-        + f"-{data_date_str}-{mask_area.lower().replace(' ','_')}-{color_style.lower()}"
+        f"{source.replace('-','_')}_ens-{mask_area.lower().replace(' ','_')}-"
+        + f"{vis_param.value.lower().replace(' ','_')}-{plot_units.value.replace('/','_')}"
+        + f"-{color_style.value.lower()}-{data_date_str}"
     )
-    if ensemble:
-        fname_str += f"-ensemble-max_plots-{max_ensemble_plots}"
+    if init_time is not None:
+        fname_str += f"-init_{init_time.value}"
+    if valid_time is not None:
+        fname_str += f"-valid_{valid_time.value}"
     if acc_time is not None:
-        fname_str += f"-{acc_time.value}"
+        fname_str += f"-acc_{acc_time.value}"
+    if ensemble:
+        fname_str += f"-{max_ensemble_plots}_ens_plots"
     if show_percentages:
         fname_str += "-percentage"
     if threshold is not None:
         fname_str += f"-chance_threshold_{threshold:.2f}".replace(".", "_")
-    if start_time is None:
-        return [get_cached_file_base_path(source=source) / f"{fname_str}.{extension}"]
-    return [get_cached_file_base_path(source=source) / f"{fname_str}_{start_time.value.rjust(2, '0')}.{extension}"]
+    return [get_cached_file_base_path(source=source) / f"{fname_str}.{extension}"]
 
 
 async def get_local_histogram_chart(
