@@ -47,7 +47,7 @@ def make_dataset_path(dataset_url: str, data_source: str, trim_part: str | None 
     forecasts_dir = get_data_store_path(source=data_source)
     data_dir = forecasts_dir / f"{dir_tree.replace('%20', ' ') if dir_tree != '/' else ''}"
     if not data_dir.exists():
-        data_dir.mkdir(parents=True)
+        data_dir.mkdir(parents=True, exist_ok=True)
 
 
 def retrieve_cgan_data_links(
@@ -78,7 +78,7 @@ def download_ens_dataset(source: str, link: str):
     data_dir = get_data_store_path(source=f"{source}-count")
     destination = data_dir / data_date[:4] / data_date[4:6]
     if not destination.exists():
-        destination.mkdir(parents=True)
+        destination.mkdir(parents=True, exist_ok=True)
     file_path = destination / file_name
     if not file_path.exists():
         logger.debug(f"trying download of {link}")

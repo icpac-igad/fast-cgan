@@ -132,7 +132,7 @@ settings = Settings()
 def get_asset_dir_path(asset: Literal["cache"]) -> Path:
     asset_path = Path(settings.ASSETS_DIR_MAP[asset])
     if not asset_path.exists():
-        asset_path.mkdir(parents=True)
+        asset_path.mkdir(parents=True, exist_ok=True)
     return asset_path
 
 
@@ -141,7 +141,7 @@ def get_cached_file_base_path(file_type: Literal["media", "data"] | None = "medi
     if source is not None:
         cache_path = cache_path / source
     if not cache_path.exists():
-        cache_path.mkdir(parents=True)
+        cache_path.mkdir(parents=True, exist_ok=True)
     return cache_path
 
 

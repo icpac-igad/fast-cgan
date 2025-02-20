@@ -50,7 +50,7 @@ def get_data_store_path(
 
     # create directory tree
     if not data_dir_path.exists():
-        data_dir_path.mkdir(parents=True)
+        data_dir_path.mkdir(parents=True, exist_ok=True)
 
     return data_dir_path
 
@@ -69,7 +69,7 @@ def get_dataset_file_path(
 
     # create directory tree
     if not store_path.exists():
-        store_path.mkdir(parents=True)
+        store_path.mkdir(parents=True, exist_ok=True)
 
     mask_code = "" if mask_region is None else mask_region.replace(" ", "_").lower()
 

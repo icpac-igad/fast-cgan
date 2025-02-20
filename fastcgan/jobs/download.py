@@ -164,7 +164,7 @@ def post_process_ecmwf_grib2_dataset(
                     logger.info(f"archiving {grib2_file_name} into {archive_dir}")
 
                     if not archive_dir.exists():
-                        archive_dir.mkdir(parents=True)
+                        archive_dir.mkdir(parents=True, exist_ok=True)
 
                     try:
                         grib2_file.replace(target=archive_dir / grib2_file_name)
