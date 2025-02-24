@@ -49,30 +49,6 @@ class AssetPathSettings(BaseSettings):
     }
     CACHE_BASE_URL: str | None = os.path.expandvars(config("CACHE_URL", default="/media"))
 
-
-class CryptSettings(BaseSettings):
-    SECRET_KEY: str = config("SECRET_KEY")
-    ALGORITHM: str = config("ALGORITHM", default="HS256")
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = config("ACCESS_TOKEN_EXPIRE_MINUTES", default=30)
-    REFRESH_TOKEN_EXPIRE_DAYS: int = config("REFRESH_TOKEN_EXPIRE_DAYS", default=7)
-
-
-class PostgresSettings(BaseSettings):
-    POSTGRES_USER: str = config("POSTGRES_USER", default="postgres")
-    POSTGRES_PASSWORD: str = config("POSTGRES_PASSWORD", default="postgres")
-    POSTGRES_SERVER: str = config("POSTGRES_SERVER", default="localhost")
-    POSTGRES_PORT: int = config("POSTGRES_PORT", default=5432)
-    POSTGRES_DB: str = config("POSTGRES_DB", default="postgres")
-    POSTGRES_SYNC_PREFIX: str = config("POSTGRES_SYNC_PREFIX", default="postgresql://")
-    POSTGRES_ASYNC_PREFIX: str = config("POSTGRES_ASYNC_PREFIX", default="postgresql+asyncpg://")
-    POSTGRES_URI: str = os.path.expandvars(
-        config(
-            "POSTGRES_URI",
-            default=f"{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_SERVER}:{POSTGRES_PORT}/{POSTGRES_DB}",
-        )
-    )
-
-
 class RedisCacheSettings(BaseSettings):
     REDIS_CACHE_HOST: str = os.path.expandvars(config("REDIS_CACHE_HOST", default="localhost"))
     REDIS_CACHE_PORT: int = config("REDIS_CACHE_PORT", default=6379)
@@ -114,8 +90,6 @@ class Settings(
     AppSettings,
     OpenapiSettings,
     AssetPathSettings,
-    PostgresSettings,
-    CryptSettings,
     RedisCacheSettings,
     ClientSideCacheSettings,
     RedisQueueSettings,

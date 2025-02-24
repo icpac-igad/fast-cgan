@@ -12,7 +12,6 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
-from fastcgan.db.schema import *  # noqa: F403
 from fastcgan.middleware.client_cache_middleware import ClientCacheMiddleware
 from fastcgan.routes import limiter
 from fastcgan.tools.config import (
@@ -22,7 +21,6 @@ from fastcgan.tools.config import (
     EnvironmentOption,
     EnvironmentSettings,
     OpenapiSettings,
-    PostgresSettings,
     RedisCacheSettings,
     RedisQueueSettings,
     RedisRateLimiterSettings,
@@ -74,8 +72,7 @@ async def set_threadpool_tokens(number_of_tokens: int = 100) -> None:
 
 def lifespan_factory(
     settings: (
-        PostgresSettings
-        | RedisCacheSettings
+        RedisCacheSettings
         | AppSettings
         | ClientSideCacheSettings
         | RedisQueueSettings
@@ -115,14 +112,14 @@ def lifespan_factory(
 # -------------- application --------------
 def create_application(
     settings: (
-        PostgresSettings
+        AppSettings
+        | OpenapiSettings
         | RedisCacheSettings
-        | AppSettings
-        | ClientSideCacheSettings
         | RedisQueueSettings
         | RedisRateLimiterSettings
+        | ClientSideCacheSettings
         | EnvironmentSettings
-        | OpenapiSettings
+        
     ),
     **kwargs: Any,
 ) -> FastAPI:

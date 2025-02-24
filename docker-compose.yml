@@ -5,7 +5,7 @@ services:
     volumes:
       - ${REDIS_DATA_DIR:-./data/redis}:/data
     ports:
-      - ${REDIS_CACHE_HOST:-172.17.0.1}:${REDIS_CACHE_PORT:-6379}:6379
+      - ${REDIS_CACHE_HOST:-127.0.0.1}:${REDIS_CACHE_PORT:-6379}:6379
 
   api:
     image: ${API_IMAGE_NAME:-icpac/fast-cgan-api}
@@ -15,8 +15,6 @@ services:
       dockerfile: Dockerfile
     command: gunicorn fastcgan.main:app --timeout ${GUNICORN_TIMEOUT:-300} --workers ${GUNICORN_WORKERS:-8} --worker-class uvicorn.workers.UvicornWorker --bind  0.0.0.0:8000
     environment:
-      - SECRET_KEY
-      - POSTGRES_URI
       - REDIS_CACHE_HOST
       - REDIS_CACHE_PORT
       - REDIS_QUEUE_HOST
@@ -33,7 +31,7 @@ services:
       - LOGS_DIR=${APP_LOGS_DIR:-/opt/app/logs}
       - ENVIRONMENT=${ENVIRONMENT:-production}
     ports:
-      - ${APP_HOST_IP:-172.17.0.1}:${APP_HOST_PORT:-8000}:8000
+      - ${APP_HOST_IP:-127.0.0.1}:${APP_HOST_PORT:-8000}:8000
     volumes:
       - ${FORECASTS_DATA_DIR:-./data/forecasts}:${APP_FORECASTS_DATA_DIR:-/opt/cgan/forecasts}
       - ${LOGS_DIR:-./data/logs}:${APP_LOGS_DIR:-/opt/app/logs}
