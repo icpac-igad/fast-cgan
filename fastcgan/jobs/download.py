@@ -14,6 +14,7 @@ from show_forecasts.constants import COUNTRY_NAMES, DATA_PARAMS
 from show_forecasts.data_utils import get_region_extent
 
 from fastcgan.jobs.data_sync import run_ecmwf_ifs_sync
+from fastcgan.jobs.icpac_ftp import sync_cgan_ifs_data
 from fastcgan.jobs.sftp import sync_sftp_data_files
 from fastcgan.jobs.stubs import cgan_ifs_literal, open_ifs_literal
 from fastcgan.jobs.utils import (
@@ -342,7 +343,14 @@ def syncronize_post_processed_ifs_data(model: cgan_ifs_literal, mask_region: str
     if not get_data_sycn_status(source=model, sync_type="download"):
         # set data syncronization status
         set_data_sycn_status(source=model, sync_type="download", status=True)
-        sync_sftp_data_files(model=model)
+        # sync from ICPAC if GBMC server credentials are not provided
+        if (
+            getenv("IFS_SERVER_HOST", "domain.example") == "domain.example"
+            or getenv("IFS_SERVER_USER", "username") == "username"
+        ):
+            sync_cgan_ifs_data(model=model)
+        else:
+            sync_sftp_data_files(model=model)
         set_data_sycn_status(source=model, sync_type="download", status=False)
 
 
@@ -398,13 +406,21 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     dict_args = {key: value for key, value in args.__dict__.items() if key != "command"}
-    if args.model == "open-ifs":
-        logger.info(f"received ecmwf forecast data download task with parameters {dict_args}")
-        post_process_downloaded_ecmwf_forecasts(args.model)
-        syncronize_open_ifs_forecast_data(**dict_args)
-    elif args.model == "jurre-brishti" or args.model == "mvua-kubwa":
-        post_process_downloaded_cgan_ifs(model="cgan-ifs-7d-ens" if args.model == "mvua-kubwa" else "cgan-ifs-6h-ens")
-        syncronize_post_processed_ifs_data(model=args.model)
-    elif args.model == "migrate":
-        for source in ["open-ifs", "cgan-ifs", "cgan-forecast"]:
-            migrate_files(source)
+    if args.command == "sync":
+        if args.model == "open-ifs":
+            syncronize_open_ifs_forecast_data(**dict_args)
+        elif args.model == "jurre-brishti" or args.model == "mvua-kubwa":
+            syncronize_post_processed_ifs_data(model=args.model)
+    else:
+        if args.model == "open-ifs":
+            logger.info(f"received ecmwf forecast data download task with parameters {dict_args}")
+            post_process_downloaded_ecmwf_forecasts(args.model)
+            syncronize_open_ifs_forecast_data(**dict_args)
+        elif args.model == "jurre-brishti" or args.model == "mvua-kubwa":
+            post_process_downloaded_cgan_ifs(
+                model=("cgan-ifs-7d-ens" if args.model == "mvua-kubwa" else "cgan-ifs-6h-ens")
+            )
+            syncronize_post_processed_ifs_data(model=args.model)
+        elif args.model == "migrate":
+            for source in ["open-ifs", "cgan-ifs", "cgan-forecast"]:
+                migrate_files(source)

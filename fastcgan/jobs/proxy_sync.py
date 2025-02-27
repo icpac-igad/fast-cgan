@@ -33,7 +33,7 @@ def deep_crawl_http_dataset_links(
             if href.endswith(data_ext):
                 links.add(href)
             elif "../" not in href and "//ICPAC" not in href and href.endswith("/"):
-                links = deep_crawl_http_dataset_links(data_page=href, links=links)
+                links = deep_crawl_http_dataset_links(data_page=href[:-1], links=links)
         logger.info(f"crawled a total of {len(links)} data files from {data_page}")
     else:
         logger.warning(
