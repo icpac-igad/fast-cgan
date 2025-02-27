@@ -352,6 +352,7 @@ def syncronize_post_processed_ifs_data(model: cgan_ifs_literal, mask_region: str
         else:
             sync_sftp_data_files(model=model)
         set_data_sycn_status(source=model, sync_type="download", status=False)
+    post_process_downloaded_cgan_ifs(model=model)
 
 
 if __name__ == "__main__":
