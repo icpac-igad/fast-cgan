@@ -272,44 +272,53 @@ def syncronize_open_ifs_forecast_data(
 
 
 def generate_cgan_forecasts(model: str, mask_region: str | None = COUNTRY_NAMES[0]):
-    logger.debug(f"starting cGAN forecast generation for {model} model")
-    set_data_sycn_status(source=model, sync_type="processing", status=True)
-    gbmc_source = "cgan-ifs-7d-ens" if model == "mvua-kubwa-ens" else "cgan-ifs-6h-ens"
-    ifs_dates = sorted(
-        get_gan_forecast_dates(mask_region=mask_region, source=gbmc_source),
-        reverse=True,
-    )
-    gan_dates = get_gan_forecast_dates(mask_region=mask_region, source=model)
-    missing_dates = [data_date for data_date in ifs_dates if data_date not in gan_dates and int(data_date[:4]) > 2018]
-    logger.debug(f"launching forecast generation workers for data dates {' ==> '.join(missing_dates)}")
-    for missing_date in missing_dates:
-        logger.info(f"generating {model} cGAN forecast for {missing_date}")
-        date_str, init_time = missing_date.split("_")
-        # generate forecast for date
-        data_date = datetime.strptime(date_str, "%Y%m%d")
-        gbmc_filename = get_dataset_file_path(
-            source=gbmc_source,
-            data_date=data_date,
-            file_name=f"{data_date.strftime('%Y%m%d')}_{init_time}Z.nc",
-            mask_region=mask_region,
-        )
-        store_path = get_data_store_path(source=gbmc_source, mask_region=mask_region)
-        gan_ifs = str(gbmc_filename).replace(f"{store_path}/", "")
-        logger.debug(f"starting {model} forecast generation with IFS file {gan_ifs}")
-        py_script = "forecast_date.py" if "mvua-kubwa" in model else "test_forecast.py"
-        gan_status = subprocess.call(
-            shell=True,
-            cwd=f'{getenv("WORK_HOME","/opt/cgan")}/ensemble-cgan/dsrnngan',
-            args=f"python {py_script} -f {gan_ifs}",
-        )
-        cgan_file_path = get_data_store_path(source="jobs") / model / f"GAN_{date_str}_{init_time}Z.nc"
-        if gan_status:
-            logger.error(f"failed to generate {model} cGAN forecast for {missing_date}")
-            gbmc_filename.unlink(missing_ok=True)
-            cgan_file_path.unlink(missing_ok=True)
-        else:
-            save_to_new_filesystem_structure(file_path=cgan_file_path, source=model, part_to_replace="GAN_")
-    set_data_sycn_status(source=model, sync_type="processing", status=False)
+    # start an infinite loop that will execute when other data-processing jobs are completed
+    while True:
+        if not get_processing_task_status():
+            logger.debug(f"starting cGAN forecast generation for {model} model")
+            set_data_sycn_status(source=model, sync_type="processing", status=True)
+            gbmc_source = "cgan-ifs-7d-ens" if model == "mvua-kubwa-ens" else "cgan-ifs-6h-ens"
+            ifs_dates = sorted(
+                get_gan_forecast_dates(mask_region=mask_region, source=gbmc_source),
+                reverse=True,
+            )
+            gan_dates = get_gan_forecast_dates(mask_region=mask_region, source=model)
+            missing_dates = [
+                data_date for data_date in ifs_dates if data_date not in gan_dates and int(data_date[:4]) > 2018
+            ]
+            logger.debug(f"launching forecast generation workers for data dates {' ==> '.join(missing_dates)}")
+            for missing_date in missing_dates:
+                logger.info(f"generating {model} cGAN forecast for {missing_date}")
+                date_str, init_time = missing_date.split("_")
+                # generate forecast for date
+                data_date = datetime.strptime(date_str, "%Y%m%d")
+                gbmc_filename = get_dataset_file_path(
+                    source=gbmc_source,
+                    data_date=data_date,
+                    file_name=f"{data_date.strftime('%Y%m%d')}_{init_time}Z.nc",
+                    mask_region=mask_region,
+                )
+                store_path = get_data_store_path(source=gbmc_source, mask_region=mask_region)
+                gan_ifs = str(gbmc_filename).replace(f"{store_path}/", "")
+                logger.debug(f"starting {model} forecast generation with IFS file {gan_ifs}")
+                py_script = "forecast_date.py" if "mvua-kubwa" in model else "test_forecast.py"
+                gan_status = subprocess.call(
+                    shell=True,
+                    cwd=f'{getenv("WORK_HOME","/opt/cgan")}/ensemble-cgan/dsrnngan',
+                    args=f"python {py_script} -f {gan_ifs}",
+                )
+                cgan_file_path = get_data_store_path(source="jobs") / model / f"GAN_{date_str}_{init_time}Z.nc"
+                if gan_status:
+                    logger.error(f"failed to generate {model} cGAN forecast for {missing_date}")
+                    gbmc_filename.unlink(missing_ok=True)
+                    cgan_file_path.unlink(missing_ok=True)
+                else:
+                    save_to_new_filesystem_structure(file_path=cgan_file_path, source=model, part_to_replace="GAN_")
+            set_data_sycn_status(source=model, sync_type="processing", status=False)
+            # break the infinite loop
+            break
+        # sleep for 10 minutes
+        sleep(10 * 60)
 
 
 def post_process_downloaded_cgan_ifs(model: cgan_ifs_literal):
@@ -331,7 +340,6 @@ def post_process_downloaded_cgan_ifs(model: cgan_ifs_literal):
                 # purge invalid files
                 for file_path in downloads_path.iterdir():
                     file_path.unlink(missing_ok=True)
-            generate_cgan_forecasts(model=("jurre-brishti-ens" if model == "cgan-ifs-6h-ens" else "mvua-kubwa-ens"))
             # break the loop
             break
         # sleep for 10 minutes

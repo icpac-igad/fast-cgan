@@ -10,12 +10,12 @@ import schedule
 from loguru import logger
 
 from fastcgan.jobs.download import (
+    generate_cgan_forecasts,
     post_process_downloaded_cgan_ifs,
     post_process_downloaded_ecmwf_forecasts,
     syncronize_open_ifs_forecast_data,
     syncronize_post_processed_ifs_data,
 )
-from fastcgan.jobs.proxy_sync import sync_data_source
 from fastcgan.jobs.stubs import cgan_ifs_literal, open_ifs_literal
 from fastcgan.jobs.utils import set_data_sycn_status
 
@@ -59,46 +59,42 @@ if __name__ == "__main__":
     set_data_sycn_status(source=source, sync_type="download", status=False)
     set_data_sycn_status(source=source, sync_type="processing", status=False)
 
-    if source in ["mvua-kubwa-count", "jurre-brishti-count"]:
-        source = source.replace("-count", "")
-        sync_data_source(sources=source)
-        for hour in range(11, 24, 1):
+    # start data syncronization and forecasts generation jobs
+    # follows the pattern; data sync -> post-processing -> forecast generation
+    for hour in range(11, 24, 1):
+        if source in [
+            "mvua-kubwa-count",
+            "jurre-brishti-count",
+            "mvua-kubwa-ens",
+            "jurre-brishti-ens",
+        ]:
+            model_source = "cgan-ifs-7d-ens" if "mvua-kubwa" in source else "cgan-ifs-6h-ens"
             schedule.every().day.at(f"{str(hour).rjust(2, '0')}:00", "Africa/Nairobi").do(
-                sync_data_source, sources=source
+                syncronize_post_processed_ifs_data, model=model_source
+            )
+            schedule.every().day.at(f"{str(hour).rjust(2, '0')}:00", "Africa/Nairobi").do(
+                post_process_downloaded_cgan_ifs, model=model_source
+            )
+            schedule.every().day.at(f"{str(hour).rjust(2, '0')}:00", "Africa/Nairobi").do(
+                generate_cgan_forecasts, model=source
             )
 
-    elif source == "mvua-kubwa":
-        set_data_sycn_status(source="cgan-ifs-7d-ens", sync_type="download", status=False)
-        set_data_sycn_status(source="cgan-ifs-7d-ens", sync_type="processing", status=False)
-        post_process_downloaded_cgan_ifs(model="cgan-ifs-7d-ens")
-        syncronize_post_processed_ifs_data(model="cgan-ifs-7d-ens")
-        for hour in range(11, 24, 1):
-            schedule.every().day.at(f"{str(hour).rjust(2, '0')}:00", "Africa/Nairobi").do(
-                syncronize_post_processed_ifs_data, model="cgan-ifs-7d-ens"
-            )
-
-    elif source == "jurre-brishti":
-        set_data_sycn_status(source="cgan-ifs-6h-ens", sync_type="download", status=False)
-        set_data_sycn_status(source="cgan-ifs-6h-ens", sync_type="processing", status=False)
-        post_process_downloaded_cgan_ifs(model="cgan-ifs-6h-ens")
-        syncronize_post_processed_ifs_data(model="cgan-ifs-6h-ens")
-        for hour in range(11, 24, 1):
-            schedule.every().day.at(f"{str(hour).rjust(2, '0')}:00", "Africa/Nairobi").do(
-                syncronize_post_processed_ifs_data, model="cgan-ifs-6h-ens"
-            )
-
-    elif source == "open-ifs":
-        post_process_downloaded_ecmwf_forecasts(source="open-ifs")
-        syncronize_open_ifs_forecast_data()
-        for hour in range(11, 24, 1):
-            schedule.every().day.at(f"{str(hour).rjust(2, '0')}:00", "Africa/Nairobi").do(
-                syncronize_open_ifs_forecast_data, dateback=1
-            )
+        elif source == "open-ifs":
+            # post_process_downloaded_ecmwf_forecasts(source="open-ifs")
+            # syncronize_open_ifs_forecast_data()
+            for hour in range(11, 24, 1):
+                schedule.every().day.at(f"{str(hour).rjust(2, '0')}:00", "Africa/Nairobi").do(
+                    syncronize_open_ifs_forecast_data, dateback=1
+                )
+                schedule.every().day.at(f"{str(hour).rjust(2, '0')}:00", "Africa/Nairobi").do(
+                    post_process_downloaded_ecmwf_forecasts, source="open-ifs"
+                )
 
     for job in schedule.get_jobs():
         logger.info(f"scheduled data syncronization and forecast generation task {job}")
 
+    schedule.run_all(delay_seconds=10)
+
     while True:
-        all_jobs = schedule.get_jobs()
         schedule.run_pending()
         time.sleep(30 * 60)
