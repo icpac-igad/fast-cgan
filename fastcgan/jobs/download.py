@@ -13,10 +13,11 @@ from loguru import logger
 from show_forecasts.constants import COUNTRY_NAMES, DATA_PARAMS
 from show_forecasts.data_utils import get_region_extent
 
+from fastcgan.jobs.counts import make_cgan_forecast_counts
 from fastcgan.jobs.data_sync import run_ecmwf_ifs_sync
 from fastcgan.jobs.icpac_ftp import sync_cgan_ifs_data
 from fastcgan.jobs.sftp import sync_sftp_data_files
-from fastcgan.jobs.stubs import cgan_ifs_literal, open_ifs_literal
+from fastcgan.jobs.stubs import cgan_model_literal, open_ifs_literal
 from fastcgan.jobs.utils import (
     get_data_store_path,
     get_data_sycn_status,
@@ -271,13 +272,13 @@ def syncronize_open_ifs_forecast_data(
         set_data_sycn_status(sync_type="download", source="open-ifs", status=False)
 
 
-def generate_cgan_forecasts(model: str, mask_region: str | None = COUNTRY_NAMES[0]):
+def generate_cgan_forecasts(model: cgan_model_literal, mask_region: str | None = COUNTRY_NAMES[0]):
     # start an infinite loop that will execute when other data-processing jobs are completed
     while True:
         if not get_processing_task_status():
             logger.debug(f"starting cGAN forecast generation for {model} model")
             set_data_sycn_status(source=model, sync_type="processing", status=True)
-            gbmc_source = "cgan-ifs-7d-ens" if model == "mvua-kubwa-ens" else "cgan-ifs-6h-ens"
+            gbmc_source = "cgan-ifs-7d-ens" if "mvua-kubwa" in model else "cgan-ifs-6h-ens"
             ifs_dates = sorted(
                 get_gan_forecast_dates(mask_region=mask_region, source=gbmc_source),
                 reverse=True,
@@ -313,7 +314,18 @@ def generate_cgan_forecasts(model: str, mask_region: str | None = COUNTRY_NAMES[
                     gbmc_filename.unlink(missing_ok=True)
                     cgan_file_path.unlink(missing_ok=True)
                 else:
-                    save_to_new_filesystem_structure(file_path=cgan_file_path, source=model, part_to_replace="GAN_")
+                    if "count" in model:
+                        make_cgan_forecast_counts(
+                            date_str=date_str,
+                            hour_str=init_time,
+                            model_name=model.replace("-count", ""),
+                        )
+                    else:
+                        save_to_new_filesystem_structure(
+                            file_path=cgan_file_path,
+                            source=model,
+                            part_to_replace="GAN_",
+                        )
             set_data_sycn_status(source=model, sync_type="processing", status=False)
             # break the infinite loop
             break
@@ -321,22 +333,27 @@ def generate_cgan_forecasts(model: str, mask_region: str | None = COUNTRY_NAMES[
         sleep(10 * 60)
 
 
-def post_process_downloaded_cgan_ifs(model: cgan_ifs_literal):
+def post_process_downloaded_cgan_ifs(model: cgan_model_literal):
     # start an infinite loop that is executed when there are no other jobs running
     while True:
         if not get_processing_task_status():
-            downloads_path = get_data_store_path(source="jobs") / model
+            source_model = "cgan-ifs-6h-ens" if "jurre-brishti" in model else "cgan-ifs-7d-ens"
+            downloads_path = get_data_store_path(source="jobs") / source_model
             if downloads_path.exists():
                 gbmc_files = [file_path for file_path in downloads_path.iterdir() if file_path.name.endswith(".nc")]
                 if not len(gbmc_files):
-                    logger.warning(f"no un-processed {model} datasets found. task skipped!")
+                    logger.warning(f"no un-processed {source_model} datasets found. task skipped!")
                 else:
                     logger.info(
-                        f"starting {model} forecasts batch post-processing task for "
+                        f"starting {source_model} forecasts batch post-processing task for "
                         + f"{'  <---->  '.join([gbmc_file.name for gbmc_file in gbmc_files])}"
                     )
                     for gbmc_file in gbmc_files:
-                        save_to_new_filesystem_structure(file_path=gbmc_file, source=model, part_to_replace="IFS_")
+                        save_to_new_filesystem_structure(
+                            file_path=gbmc_file,
+                            source=source_model,
+                            part_to_replace="IFS_",
+                        )
                 # purge invalid files
                 for file_path in downloads_path.iterdir():
                     file_path.unlink(missing_ok=True)
@@ -346,9 +363,9 @@ def post_process_downloaded_cgan_ifs(model: cgan_ifs_literal):
         sleep(60 * 10)
 
 
-def syncronize_post_processed_ifs_data(model: cgan_ifs_literal, mask_region: str | None = COUNTRY_NAMES[0]):
-    logger.debug(f"received cGAN data syncronization for {model} - {mask_region}")
-    if not get_data_sycn_status(source=model, sync_type="download"):
+def syncronize_post_processed_ifs_data(model: cgan_model_literal):
+    logger.debug(f"received cGAN data syncronization for {model}")
+    if not get_data_sycn_status(source=model, sync_type="download") and "count" not in model:
         # set data syncronization status
         set_data_sycn_status(source=model, sync_type="download", status=True)
         # sync from ICPAC if GBMC server credentials are not provided
@@ -358,7 +375,7 @@ def syncronize_post_processed_ifs_data(model: cgan_ifs_literal, mask_region: str
         ):
             sync_cgan_ifs_data(model=model)
         else:
-            sync_sftp_data_files(model=model)
+            sync_sftp_data_files(model=("cgan-ifs-6h-ens" if "jurre-brishti" in model else "cgan-ifs-7d-ens"))
         set_data_sycn_status(source=model, sync_type="download", status=False)
     post_process_downloaded_cgan_ifs(model=model)
 

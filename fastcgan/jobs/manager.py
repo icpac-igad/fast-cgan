@@ -68,12 +68,11 @@ if __name__ == "__main__":
             "mvua-kubwa-ens",
             "jurre-brishti-ens",
         ]:
-            model_source = "cgan-ifs-7d-ens" if "mvua-kubwa" in source else "cgan-ifs-6h-ens"
             schedule.every().day.at(f"{str(hour).rjust(2, '0')}:00", "Africa/Nairobi").do(
-                syncronize_post_processed_ifs_data, model=model_source
+                syncronize_post_processed_ifs_data, model=source
             )
             schedule.every().day.at(f"{str(hour).rjust(2, '0')}:00", "Africa/Nairobi").do(
-                post_process_downloaded_cgan_ifs, model=model_source
+                post_process_downloaded_cgan_ifs, model=source
             )
             schedule.every().day.at(f"{str(hour).rjust(2, '0')}:00", "Africa/Nairobi").do(
                 generate_cgan_forecasts, model=source

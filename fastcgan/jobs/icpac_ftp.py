@@ -5,6 +5,7 @@ import requests
 from bs4 import BeautifulSoup
 from loguru import logger
 
+from fastcgan.jobs.stubs import cgan_model_literal
 from fastcgan.jobs.utils import get_data_store_path
 
 
@@ -54,10 +55,10 @@ def download_cgan_ifs_ens_dataset(model_name: Literal["cgan-ifs-6h-ens", "cgan-i
 
 
 def sync_cgan_ifs_data(
-    model: Literal["mvua-kubwa", "jurre-brishti"],
+    model: cgan_model_literal,
     provider_url: str | None = "https://cgan.icpac.net/ftp",
 ) -> None:
-    source_model = "cgan-ifs-6h-ens" if model == "jurre-brishti" else "cgan-ifs-7d-ens"
+    source_model = "cgan-ifs-6h-ens" if "jurre-brishti" in model else "cgan-ifs-7d-ens"
     links = deep_crawl_http_dataset_links(data_page=f"{provider_url}/{source_model}")
     logger.info(f"crawled a total of {len(links)} data files from {provider_url}")
     for link in sorted(links, reverse=True):
