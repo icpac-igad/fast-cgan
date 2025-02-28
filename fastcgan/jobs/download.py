@@ -15,7 +15,7 @@ from show_forecasts.data_utils import get_region_extent
 
 from fastcgan.jobs.counts import make_cgan_forecast_counts
 from fastcgan.jobs.data_sync import run_ecmwf_ifs_sync
-from fastcgan.jobs.icpac_ftp import sync_cgan_ifs_data
+from fastcgan.jobs.icpac_ftp import sync_icpac_ifs_data
 from fastcgan.jobs.sftp import sync_sftp_data_files
 from fastcgan.jobs.stubs import cgan_model_literal, open_ifs_literal
 from fastcgan.jobs.utils import (
@@ -230,43 +230,47 @@ def syncronize_open_ifs_forecast_data(
 
     if not get_data_sycn_status(source="open-ifs", sync_type="download"):
         mask_region = getenv("DEFAULT_MASK", COUNTRY_NAMES[0])
-        logger.info(
-            f"starting open-ifs forecast data syncronization for {mask_region} at "
-            + f"{datetime.now().strftime('%Y-%m-%d %H:%M')} {dt_fx} with time steps "
-            + f"{start_step} to {final_step} and {dateback} days back"
-        )
-        # generate download parameters
-        data_dates = get_possible_forecast_dates(data_date=date_str, dateback=dateback)
-        ifs_dates = [
-            datetime.strptime(value, "%b %d, %Y").date()
-            for value in get_forecast_data_dates(source="open-ifs", mask_region=mask_region)
-        ]
-
-        # set data syncronization status
-        set_data_sycn_status(sync_type="download", source="open-ifs", status=True)
-        with concurrent.futures.ThreadPoolExecutor(max_workers=int(cpu_count() / 2)) as executor:
-            results = [
-                executor.submit(
-                    run_ecmwf_ifs_sync,
-                    data_date=data_date,
-                    start_step=start_step,
-                    final_step=final_step,
-                )
-                for data_date in [value for value in data_dates if value not in ifs_dates]
+        sync_icpac_ifs = getenv("USE_ICPAC_IFS", False)
+        if sync_icpac_ifs:
+            sync_icpac_ifs_data(model="open-ifs")
+        else:
+            logger.info(
+                f"starting open-ifs forecast data syncronization for {mask_region} at "
+                + f"{datetime.now().strftime('%Y-%m-%d %H:%M')} {dt_fx} with time steps "
+                + f"{start_step} to {final_step} and {dateback} days back"
+            )
+            # generate download parameters
+            data_dates = get_possible_forecast_dates(data_date=date_str, dateback=dateback)
+            ifs_dates = [
+                datetime.strptime(value, "%b %d, %Y").date()
+                for value in get_forecast_data_dates(source="open-ifs", mask_region=mask_region)
             ]
-            for future in concurrent.futures.as_completed(results):
-                if future.result() is not None:
-                    grib2_files = future.result()
-                    if grib2_files is not None:
-                        # run infinite loop that is executed when there are no other active workers
-                        while True:
-                            if not get_processing_task_status():
-                                for grib2_file in grib2_files:
-                                    post_process_ecmwf_grib2_dataset(grib2_file_name=grib2_file)
-                                # break the loop at the end of execution
-                                break
-                            # sleep for 10 minutes
-                            sleep(60 * 10)
+
+            # set data syncronization status
+            set_data_sycn_status(sync_type="download", source="open-ifs", status=True)
+            with concurrent.futures.ThreadPoolExecutor(max_workers=int(cpu_count() / 2)) as executor:
+                results = [
+                    executor.submit(
+                        run_ecmwf_ifs_sync,
+                        data_date=data_date,
+                        start_step=start_step,
+                        final_step=final_step,
+                    )
+                    for data_date in [value for value in data_dates if value not in ifs_dates]
+                ]
+                for future in concurrent.futures.as_completed(results):
+                    if future.result() is not None:
+                        grib2_files = future.result()
+                        if grib2_files is not None:
+                            # run infinite loop that is executed when there are no other active workers
+                            while True:
+                                if not get_processing_task_status():
+                                    for grib2_file in grib2_files:
+                                        post_process_ecmwf_grib2_dataset(grib2_file_name=grib2_file)
+                                    # break the loop at the end of execution
+                                    break
+                                # sleep for 10 minutes
+                                sleep(60 * 10)
 
         # set data syncronization status
         set_data_sycn_status(sync_type="download", source="open-ifs", status=False)
@@ -373,7 +377,7 @@ def syncronize_post_processed_ifs_data(model: cgan_model_literal):
             getenv("IFS_SERVER_HOST", "domain.example") == "domain.example"
             or getenv("IFS_SERVER_USER", "username") == "username"
         ):
-            sync_cgan_ifs_data(model=model)
+            sync_icpac_ifs_data(model=model)
         else:
             sync_sftp_data_files(model=("cgan-ifs-6h-ens" if "jurre-brishti" in model else "cgan-ifs-7d-ens"))
         set_data_sycn_status(source=model, sync_type="download", status=False)
