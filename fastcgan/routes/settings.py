@@ -25,6 +25,9 @@ async def get_forecast_dates(
     )
     return [settings.ForecastDate(date=data_date) for data_date in data_dates]
 
+@router.get("/forecast-init-time", response_model=list[settings.ForecastInitTime])
+async def get_forecast_init_time(forecast_date: str) -> list[settings.ForecastInitTime]:
+    pass
 
 @router.get("/mask-areas", response_model=list[settings.MaskArea])
 async def get_mask_areas() -> list[settings.MaskArea]:

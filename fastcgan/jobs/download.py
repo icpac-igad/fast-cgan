@@ -356,7 +356,7 @@ def post_process_downloaded_cgan_ifs(model: cgan_model_literal):
                         save_to_new_filesystem_structure(
                             file_path=gbmc_file,
                             source=source_model,
-                            part_to_replace="IFS_" if "IFS_" in gbmc_file else f"east_africa-{source_model.replace('-','_')}-",
+                            part_to_replace="IFS_" if "IFS_" in gbmc_file.name else f"east_africa-{source_model.replace('-','_')}-",
                         )
                 # purge invalid files
                 for file_path in downloads_path.iterdir():
