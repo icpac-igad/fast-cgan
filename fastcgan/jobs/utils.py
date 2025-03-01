@@ -280,14 +280,21 @@ def set_data_sycn_status(
         with open(status_file, "w") as sf:
             sf.write(json.dumps({sync_type: {source: status}}))
     else:
-        with open(status_file) as sf:
-            data = json.loads(sf.read())
-        if sync_type not in data.keys():
-            data.update({sync_type: {source: status}})
+        try:
+            with open(status_file) as sf:
+                data = json.loads(sf.read())
+        except Exception as err:
+            logger.warning(f"failed to read contents of tasks status log file with error {err}")
+            logger.debug(f"recreating tasks status log file {status_file}")
+            with open(status_file, "w") as sf:
+                sf.write(json.dumps({sync_type: {source: status}}))
         else:
-            data[sync_type][source] = status
-        with open(status_file, "w") as sf:
-            sf.write(json.dumps(data))
+            if sync_type not in data.keys():
+                data.update({sync_type: {source: status}})
+            else:
+                data[sync_type][source] = status
+            with open(status_file, "w") as sf:
+                sf.write(json.dumps(data))
 
 
 def get_data_sycn_status(

@@ -33,7 +33,7 @@ def deep_crawl_http_dataset_links(
 def download_open_ifs_ens_dataset(link: str):
     file_name = link.split("/")[-1]
     filename_parts = file_name.split("-")
-    destination = get_data_store_path(source="open-ifs", mask_region=filename_parts.replace("_", "").title())
+    destination = get_data_store_path(source="open-ifs", mask_region=filename_parts[0].replace("_", "").title())
     data_date = datetime.strptime(filename_parts[2], "%Y%m%d000000")
     file_path = destination / data_date.year / f"{data_date.month:02d}" / file_name
     if not file_path.exists():
