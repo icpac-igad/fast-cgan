@@ -3,7 +3,7 @@ import os
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Literal
-
+from datetime import datetime
 import xarray as xr
 from loguru import logger
 from show_forecasts.constants import (
@@ -13,7 +13,6 @@ from show_forecasts.constants import (
     LEAD_START_HOUR,
 )
 from show_forecasts.data_utils import get_region_extent
-
 from fastcgan.jobs.stubs import cgan_ifs_literal, cgan_model_literal, open_ifs_literal
 from fastcgan.tools.config import settings
 from fastcgan.tools.constants import ACCUMULATION_UNITS, GAN_MODELS
@@ -138,6 +137,12 @@ def get_forecast_data_dates(
             tmp_dates.append(data_date)
     return [data_date.strftime("%b %d, %Y") for data_date in reversed(tmp_dates)]
 
+def get_forecast_initialization_times(data_date: str | None = None, model: Literal["jurre-brishti-ens", "jurre-bristi-count"] | None = "jurre-brishti-ens") -> list[str]:
+    if data_date is None:
+        data_date = get_forecast_data_dates(source=model)[0]
+    fcst_date = datetime.strptime(data_date, "%b %d, %Y").strftime("%Y%m%d")
+    data_files = get_forecast_data_files(source=source, mask_region=mask_region)
+    return [data_file.replace('Z.nc').split('_')[1] for data_file in data_files if fcst_date in data_file]
 
 def get_gan_forecast_dates(
     source: str,
@@ -323,7 +328,7 @@ def get_processing_task_status(sync_type: str | None = "processing") -> bool:
         data = json.loads(sf.read())
         if sync_type not in data.keys():
             return False
-        return all(data[sync_type].values())
+        return not all([value == False for value in data[sync_type].values()])
 
 
 # Some info to be clear with dates and times

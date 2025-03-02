@@ -3,7 +3,7 @@ from typing import Literal
 from fastapi import APIRouter
 from show_forecasts.constants import COLOR_SCHEMES, COUNTRY_NAMES
 
-from fastcgan.jobs.utils import get_forecast_data_dates
+from fastcgan.jobs.utils import get_forecast_data_dates, get_forecast_initialization_times
 from fastcgan.models import settings
 from fastcgan.tools.constants import GAN_MODELS
 
@@ -26,8 +26,9 @@ async def get_forecast_dates(
     return [settings.ForecastDate(date=data_date) for data_date in data_dates]
 
 @router.get("/forecast-init-time", response_model=list[settings.ForecastInitTime])
-async def get_forecast_init_time(forecast_date: str) -> list[settings.ForecastInitTime]:
-    pass
+async def get_forecast_init_time(forecast_date: str | None = None, model_name: Literal["jurre-brishti-ens", "jurre-bristi-count"] | None = "jurre-brishti-ens") -> list[settings.ForecastInitTime]:
+    fcst_times = get_forecast_initialization_times(data_date=forecast_date, model=model_name)
+    return [settings.ForecastInitTime(hour=init_time) for init_time in fcst_times]
 
 @router.get("/mask-areas", response_model=list[settings.MaskArea])
 async def get_mask_areas() -> list[settings.MaskArea]:
