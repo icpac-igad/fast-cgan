@@ -141,15 +141,10 @@ def post_process_ecmwf_grib2_dataset(
                                 engine="netcdf4",
                             )
                         except Exception as error:
-                            logger.error(
-                                f"failed to save {source} open ifs dataset slice for {mask_region} with error {error}"
-                            )
+                            logger.error(f"failed to save {source} open ifs dataset slice for {mask_region} with error {error}")
                 # remove grib2 file from disk
                 if not archive_grib2:
-                    logger.info(
-                        f"removing {grib2_file_name} from disk. Pass archive_grib2=True"
-                        + "to archive the file on local storage disk."
-                    )
+                    logger.info(f"removing {grib2_file_name} from disk. Pass archive_grib2=True" + "to archive the file on local storage disk.")
                     for _ in range(10):
                         try:
                             grib2_file.unlink()
@@ -242,8 +237,7 @@ def syncronize_open_ifs_forecast_data(
             # generate download parameters
             data_dates = get_possible_forecast_dates(data_date=date_str, dateback=dateback)
             ifs_dates = [
-                datetime.strptime(value, "%b %d, %Y").date()
-                for value in get_forecast_data_dates(source="open-ifs", mask_region=mask_region)
+                datetime.strptime(value, "%b %d, %Y").date() for value in get_forecast_data_dates(source="open-ifs", mask_region=mask_region)
             ]
 
             # set data syncronization status
@@ -288,9 +282,7 @@ def generate_cgan_forecasts(model: cgan_model_literal, mask_region: str | None =
                 reverse=True,
             )
             gan_dates = get_gan_forecast_dates(mask_region=mask_region, source=model)
-            missing_dates = [
-                data_date for data_date in ifs_dates if data_date not in gan_dates and int(data_date[:4]) > 2018
-            ]
+            missing_dates = [data_date for data_date in ifs_dates if data_date not in gan_dates and int(data_date[:4]) > 2018]
             logger.debug(f"launching forecast generation workers for data dates {' ==> '.join(missing_dates)}")
             for missing_date in missing_dates:
                 logger.info(f"generating {model} cGAN forecast for {missing_date}")
@@ -373,10 +365,7 @@ def syncronize_post_processed_ifs_data(model: cgan_model_literal):
         # set data syncronization status
         set_data_sycn_status(source=model, sync_type="download", status=True)
         # sync from ICPAC if GBMC server credentials are not provided
-        if (
-            getenv("IFS_SERVER_HOST", "domain.example") == "domain.example"
-            or getenv("IFS_SERVER_USER", "username") == "username"
-        ):
+        if getenv("IFS_SERVER_HOST", "domain.example") == "domain.example" or getenv("IFS_SERVER_USER", "username") == "username":
             sync_icpac_ifs_data(model=model)
         else:
             sync_sftp_data_files(model=("cgan-ifs-6h-ens" if "jurre-brishti" in model else "cgan-ifs-7d-ens"))
@@ -447,9 +436,7 @@ if __name__ == "__main__":
             post_process_downloaded_ecmwf_forecasts(args.model)
             syncronize_open_ifs_forecast_data(**dict_args)
         elif args.model == "jurre-brishti" or args.model == "mvua-kubwa":
-            post_process_downloaded_cgan_ifs(
-                model=("cgan-ifs-7d-ens" if args.model == "mvua-kubwa" else "cgan-ifs-6h-ens")
-            )
+            post_process_downloaded_cgan_ifs(model=("cgan-ifs-7d-ens" if args.model == "mvua-kubwa" else "cgan-ifs-6h-ens"))
             syncronize_post_processed_ifs_data(model=args.model)
         elif args.model == "migrate":
             for source in ["open-ifs", "cgan-ifs", "cgan-forecast"]:

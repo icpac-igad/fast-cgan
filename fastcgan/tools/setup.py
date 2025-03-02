@@ -71,14 +71,7 @@ async def set_threadpool_tokens(number_of_tokens: int = 100) -> None:
 
 
 def lifespan_factory(
-    settings: (
-        RedisCacheSettings
-        | AppSettings
-        | ClientSideCacheSettings
-        | RedisQueueSettings
-        | RedisRateLimiterSettings
-        | EnvironmentSettings
-    ),
+    settings: (RedisCacheSettings | AppSettings | ClientSideCacheSettings | RedisQueueSettings | RedisRateLimiterSettings | EnvironmentSettings),
 ) -> Callable[[FastAPI], _AsyncGeneratorContextManager[Any]]:
     """Factory to create a lifespan async context manager for a FastAPI app."""
 
@@ -119,7 +112,6 @@ def create_application(
         | RedisRateLimiterSettings
         | ClientSideCacheSettings
         | EnvironmentSettings
-        
     ),
     **kwargs: Any,
 ) -> FastAPI:

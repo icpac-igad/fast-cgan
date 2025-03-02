@@ -38,9 +38,7 @@ class OpenapiSettings(BaseSettings):
 
 class AssetPathSettings(BaseSettings):
     CACHE_FILES_DIR: str | None = os.path.expandvars(config("CACHE_DIR", default=os.path.join(base_dir, "cache")))
-    FORECASTS_DATA_DIR: str | None = os.path.expandvars(
-        config("FORECASTS_DATA_DIR", default=os.path.join(base_dir, "./data"))
-    )
+    FORECASTS_DATA_DIR: str | None = os.path.expandvars(config("FORECASTS_DATA_DIR", default=os.path.join(base_dir, "./data")))
     JOBS_DATA_DIR: str | None = os.path.expandvars(config("JOBS_DATA_DIR", default=os.path.join(base_dir, "./jobs")))
     ASSETS_DIR_MAP: dict[str, str] = {
         "cache": CACHE_FILES_DIR,
@@ -48,6 +46,7 @@ class AssetPathSettings(BaseSettings):
         "forecasts": FORECASTS_DATA_DIR,
     }
     CACHE_BASE_URL: str | None = os.path.expandvars(config("CACHE_URL", default="/media"))
+
 
 class RedisCacheSettings(BaseSettings):
     REDIS_CACHE_HOST: str = os.path.expandvars(config("REDIS_CACHE_HOST", default="localhost"))

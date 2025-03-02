@@ -60,11 +60,7 @@ def open_ifs_data_download_task(
     target_size = 0 if not target_file.exists() else target_file.stat().st_size / (1024 * 1024)
     mask_size = 0 if not mask_file.exists() else mask_file.stat().st_size / (1024 * 1024)
     client = Client(source="ecmwf", model=model, resol=resolution)
-    if (
-        not (target_file.exists() or mask_file.exists())
-        or not (target_size >= min_grib2_size or mask_size >= min_nc_size)
-        or force_download
-    ):
+    if not (target_file.exists() or mask_file.exists()) or not (target_size >= min_grib2_size or mask_size >= min_nc_size) or force_download:
         get_url = client._get_urls(request=request, target=str(target_file), use_index=False)
         logger.info(f"trying {model} data download with payload {request} on URL {get_url.urls[0]}")
         for _ in range(re_try_times):
@@ -75,10 +71,7 @@ def open_ifs_data_download_task(
                 model=model,
             )
             if result is not None:
-                logger.info(
-                    f"dataset for {model} forecast, {request['step']}h step, {result.datetime} "
-                    + "successfully downloaded"
-                )
+                logger.info(f"dataset for {model} forecast, {request['step']}h step, {result.datetime} " + "successfully downloaded")
                 break
     else:
         logger.warning(
@@ -121,10 +114,7 @@ def run_ecmwf_ifs_sync(
         ]
         grib2_files = []
         with concurrent.futures.ThreadPoolExecutor(max_workers=cpu_count() * 4) as executor:
-            results = [
-                executor.submit(open_ifs_data_download_task, data_date=data_date, request=request)
-                for request in requests
-            ]
+            results = [executor.submit(open_ifs_data_download_task, data_date=data_date, request=request) for request in requests]
         for future in concurrent.futures.as_completed(results):
             if future.result() is not None:
                 grib2_files.append(future.result())

@@ -4,6 +4,7 @@ from pydantic import BaseModel
 class ForecastDate(BaseModel):
     date: str
 
+
 class ForecastInitTime(BaseModel):
     hour: str
 

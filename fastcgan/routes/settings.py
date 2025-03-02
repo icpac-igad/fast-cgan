@@ -25,10 +25,14 @@ async def get_forecast_dates(
     )
     return [settings.ForecastDate(date=data_date) for data_date in data_dates]
 
+
 @router.get("/forecast-init-time", response_model=list[settings.ForecastInitTime])
-async def get_forecast_init_time(forecast_date: str | None = None, model_name: Literal["jurre-brishti-ens", "jurre-bristi-count"] | None = "jurre-brishti-ens") -> list[settings.ForecastInitTime]:
+async def get_forecast_init_time(
+    forecast_date: str | None = None, model_name: Literal["jurre-brishti-ens", "jurre-bristi-count"] | None = "jurre-brishti-ens"
+) -> list[settings.ForecastInitTime]:
     fcst_times = get_forecast_initialization_times(data_date=forecast_date, model=model_name)
     return [settings.ForecastInitTime(hour=init_time) for init_time in fcst_times]
+
 
 @router.get("/mask-areas", response_model=list[settings.MaskArea])
 async def get_mask_areas() -> list[settings.MaskArea]:
@@ -37,8 +41,4 @@ async def get_mask_areas() -> list[settings.MaskArea]:
 
 @router.get("/color-styles", response_model=list[settings.VisualizationColorStyle])
 async def get_color_styles() -> list[settings.VisualizationColorStyle]:
-    return [
-        settings.VisualizationColorStyle(name=color_style)
-        for color_style in COLOR_SCHEMES
-        if color_style not in ["ICPAC_heavy", "EMI_heavy"]
-    ]
+    return [settings.VisualizationColorStyle(name=color_style) for color_style in COLOR_SCHEMES if color_style not in ["ICPAC_heavy", "EMI_heavy"]]

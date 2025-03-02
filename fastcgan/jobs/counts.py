@@ -27,7 +27,7 @@ def make_cgan_forecast_counts(
     output_dir = get_data_store_path(source=f"{model_name}-count")
     # input forecast file name
     in_file_name = f"{data_dir}/{model_name}-ens/GAN_{year}{month:02d}{day:02d}_{hour:02d}Z.nc"
-    logger.debug(f"reading {model} forecast file {in_file_name}")
+    logger.debug(f"reading {model_name} forecast file {in_file_name}")
     # model incremetor time in hours
     multiplier = 6 if model_name == "jurre-brishti" else 24
     time_steps = 30 if model_name == "jurre-brishti" else 6

@@ -3,7 +3,7 @@ import os
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Literal
-from datetime import datetime
+
 import xarray as xr
 from loguru import logger
 from show_forecasts.constants import (
@@ -13,6 +13,7 @@ from show_forecasts.constants import (
     LEAD_START_HOUR,
 )
 from show_forecasts.data_utils import get_region_extent
+
 from fastcgan.jobs.stubs import cgan_ifs_literal, cgan_model_literal, open_ifs_literal
 from fastcgan.tools.config import settings
 from fastcgan.tools.constants import ACCUMULATION_UNITS, GAN_MODELS
@@ -60,11 +61,7 @@ def get_dataset_file_path(
     file_name: str,
     mask_region: str | None = None,
 ) -> Path:
-    store_path = (
-        get_data_store_path(source=source, mask_region=mask_region)
-        / str(data_date.year)
-        / f"{str(data_date.month).rjust(2, '0')}"
-    )
+    store_path = get_data_store_path(source=source, mask_region=mask_region) / str(data_date.year) / f"{str(data_date.month).rjust(2, '0')}"
 
     # create directory tree
     if not store_path.exists():
@@ -98,10 +95,7 @@ def get_forecast_data_files(
 
 def get_ecmwf_files_for_date(data_date: datetime, mask_region: str | None = COUNTRY_NAMES[0]) -> list[str]:
     steps = get_relevant_forecast_steps()
-    return [
-        f"{mask_region.lower().replace(' ', '_')}-open_ifs-{data_date.strftime('%Y%m%d')}000000-{step}h-enfo-ef.nc"
-        for step in steps
-    ]
+    return [f"{mask_region.lower().replace(' ', '_')}-open_ifs-{data_date.strftime('%Y%m%d')}000000-{step}h-enfo-ef.nc" for step in steps]
 
 
 def get_forecast_data_dates(
@@ -114,20 +108,11 @@ def get_forecast_data_dates(
     data_files = get_forecast_data_files(source=source, mask_region=mask_region)
     if "-count" in source:
         data_dates = sorted({dfile.replace(".nc", "").split("_")[1] for dfile in data_files})
-        return list(
-            reversed([datetime.strptime(data_date, "%Y%m%d").strftime("%b %d, %Y") for data_date in data_dates])
-        )
+        return list(reversed([datetime.strptime(data_date, "%Y%m%d").strftime("%b %d, %Y") for data_date in data_dates]))
 
     data_dates = sorted({dfile.replace(".nc", "").split("-")[2].split("_")[0] for dfile in data_files})
     if not strict or source != "open-ifs":
-        return list(
-            reversed(
-                [
-                    datetime.strptime(data_date.replace("000000", ""), "%Y%m%d").strftime("%b %d, %Y")
-                    for data_date in data_dates
-                ]
-            )
-        )
+        return list(reversed([datetime.strptime(data_date.replace("000000", ""), "%Y%m%d").strftime("%b %d, %Y") for data_date in data_dates]))
     tmp_dates = []
     for date_str in data_dates:
         data_date = datetime.strptime(date_str.replace("000000", ""), "%Y%m%d")
@@ -137,12 +122,16 @@ def get_forecast_data_dates(
             tmp_dates.append(data_date)
     return [data_date.strftime("%b %d, %Y") for data_date in reversed(tmp_dates)]
 
-def get_forecast_initialization_times(data_date: str | None = None, model: Literal["jurre-brishti-ens", "jurre-bristi-count"] | None = "jurre-brishti-ens") -> list[str]:
+
+def get_forecast_initialization_times(
+    data_date: str | None = None, model: Literal["jurre-brishti-ens", "jurre-bristi-count"] | None = "jurre-brishti-ens"
+) -> list[str]:
     if data_date is None:
         data_date = get_forecast_data_dates(source=model)[0]
     fcst_date = datetime.strptime(data_date, "%b %d, %Y").strftime("%Y%m%d")
-    data_files = get_forecast_data_files(source=source, mask_region=mask_region)
-    return [data_file.replace('Z.nc').split('_')[1] for data_file in data_files if fcst_date in data_file]
+    data_files = get_forecast_data_files(source=model)
+    return [data_file.replace("Z.nc").split("_")[1] for data_file in data_files if fcst_date in data_file]
+
 
 def get_gan_forecast_dates(
     source: str,
@@ -200,9 +189,7 @@ def save_to_new_filesystem_structure(
 ) -> None:
     logger.debug(f"received filesystem migration task for - {source} - {file_path}")
     if source in ens_ifs_models and file_path.stat().st_size / 1024 < min_gbmc_size:
-        logger.debug(
-            f"{file_path.name} migration task skipped due to invalid size of {file_path.stat().st_size / 1024}Kb"
-        )
+        logger.debug(f"{file_path.name} migration task skipped due to invalid size of {file_path.stat().st_size / 1024}Kb")
         file_path.unlink()
     else:
         logger.debug(f"processing {file_path.name} migration into revised filesystem structure")
@@ -328,7 +315,7 @@ def get_processing_task_status(sync_type: str | None = "processing") -> bool:
         data = json.loads(sf.read())
         if sync_type not in data.keys():
             return False
-        return not all([value == False for value in data[sync_type].values()])
+        return not all(value is False for value in data[sync_type].values())
 
 
 # Some info to be clear with dates and times

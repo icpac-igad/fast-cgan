@@ -16,15 +16,11 @@ def crawl_http_dataset_links(data_page: str) -> list[str]:
         soup = BeautifulSoup(r.text, features="html.parser")
         data_files.extend([f"{data_page}{a['href']}" for a in soup.find_all("a") if "../" not in a])
     else:
-        logger.warning(
-            f"failed to crawl links from {data_page} with status code {r.status_code} and response text {r.text}"
-        )
+        logger.warning(f"failed to crawl links from {data_page} with status code {r.status_code} and response text {r.text}")
     return data_files
 
 
-def deep_crawl_http_dataset_links(
-    data_page: str, data_ext: str | None = "nc", links: set[str] | None = set()
-) -> list[str]:
+def deep_crawl_http_dataset_links(data_page: str, data_ext: str | None = "nc", links: set[str] | None = set()) -> list[str]:
     r = requests.get(data_page, allow_redirects=True)
     if r.status_code == 200:
         soup = BeautifulSoup(r.text, features="html.parser")
@@ -36,9 +32,7 @@ def deep_crawl_http_dataset_links(
                 links = deep_crawl_http_dataset_links(data_page=href[:-1], links=links)
         logger.info(f"crawled a total of {len(links)} data files from {data_page}")
     else:
-        logger.warning(
-            f"failed to crawl links from {data_page} with status code {r.status_code} and response text {r.text}"
-        )
+        logger.warning(f"failed to crawl links from {data_page} with status code {r.status_code} and response text {r.text}")
     return links
 
 
