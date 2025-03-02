@@ -35,7 +35,7 @@ def download_open_ifs_ens_dataset(link: str):
     filename_parts = file_name.split("-")
     destination = get_data_store_path(source="open-ifs", mask_region=filename_parts[0].replace("_", "").title())
     data_date = datetime.strptime(filename_parts[2], "%Y%m%d000000")
-    file_path = destination / data_date.year / f"{data_date.month:02d}" / file_name
+    file_path = destination / str(data_date.year) / f"{data_date.month:02d}" / file_name
     if not file_path.exists():
         logger.debug(f"trying download of {link}")
         try:
