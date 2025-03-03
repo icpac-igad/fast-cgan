@@ -14,7 +14,7 @@ from fastcgan.jobs.utils import get_data_store_path
 def make_cgan_forecast_counts(
     date_str: str,
     hour_str: str,
-    model_name: Literal["jurre-brishti", "mvua-kubwa"],
+    model_name: Literal["jurre-brishti-count", "mvua-kubwa-count"],
 ):
     year = int(date_str[0:4])
     month = int(date_str[4:6])
@@ -24,13 +24,13 @@ def make_cgan_forecast_counts(
     # Where the forecasts are downloaded to
     data_dir = get_data_store_path(source="jobs")
     # Where the counts are saved to
-    output_dir = get_data_store_path(source=f"{model_name}-count")
+    output_dir = get_data_store_path(source=model_name)
     # input forecast file name
-    in_file_name = f"{data_dir}/{model_name}-ens/GAN_{year}{month:02d}{day:02d}_{hour:02d}Z.nc"
+    in_file_name = f"{data_dir}/{model_name}/GAN_{year}{month:02d}{day:02d}_{hour:02d}Z.nc"
     logger.debug(f"reading {model_name} forecast file {in_file_name}")
     # model incremetor time in hours
-    multiplier = 6 if model_name == "jurre-brishti" else 24
-    time_steps = 30 if model_name == "jurre-brishti" else 6
+    multiplier = 6 if model_name == "jurre-brishti-count" else 24
+    time_steps = 30 if model_name == "jurre-brishti-count" else 6
 
     # Open a NetCDF file for reading
     nc_file = nc.Dataset(in_file_name, "r")
@@ -98,7 +98,7 @@ def make_cgan_forecast_counts(
         rootgrp = nc.Dataset(file_name, "w", format="NETCDF4")
 
         # Describe where this data comes from
-        rootgrp.description = f"{model_name.title()} cGAN forecast histogram counts"
+        rootgrp.description = f"{model_name.replace('-','').replace('count','').title()} cGAN forecast histogram counts"
 
         # Create dimensions
         rootgrp.createDimension("longitude", len(longitude))
