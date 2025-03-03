@@ -136,7 +136,7 @@ def get_forecast_initialization_times(
 
 def get_gan_forecast_dates(
     source: str,
-    mask_region: str | None = COUNTRY_NAMES[0],
+    mask_region: str | None = None,
 ):
     store_path = get_data_store_path(source=source, mask_region=mask_region)
     data_files = get_directory_files(data_path=store_path, files=set())

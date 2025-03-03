@@ -278,10 +278,10 @@ def generate_cgan_forecasts(model: cgan_model_literal, mask_region: str | None =
             set_data_sycn_status(source=model, sync_type="processing", status=True)
             gbmc_source = "cgan-ifs-7d-ens" if "mvua-kubwa" in model else "cgan-ifs-6h-ens"
             ifs_dates = sorted(
-                get_gan_forecast_dates(mask_region=mask_region, source=gbmc_source),
+                get_gan_forecast_dates(mask_region=None, source=gbmc_source),
                 reverse=True,
             )
-            gan_dates = get_gan_forecast_dates(mask_region=mask_region, source=model)
+            gan_dates = get_gan_forecast_dates(mask_region=None if 'count' in source else mask_region, source=model)
             missing_dates = [data_date for data_date in ifs_dates if data_date not in gan_dates and int(data_date[:4]) > 2018]
             logger.debug(f"launching forecast generation workers for data dates {' ==> '.join(missing_dates)}")
             for missing_date in missing_dates:
