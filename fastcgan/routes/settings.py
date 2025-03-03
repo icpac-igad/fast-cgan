@@ -12,17 +12,17 @@ router = APIRouter()
 
 @router.get("/gan-forecast-models", response_model=list[settings.ForecastModel])
 async def get_gan_forecast_models(no_ensemble: int | None = 50) -> list[settings.ForecastModel]:
-    model_pref = 'count' if no_ensemble == 1000 else 'ens'
+    model_pref = "count" if no_ensemble == 1000 else "ens"
     return [settings.ForecastModel(name=f"{model['name']}-{model_pref}", label=model["label"], value=model["value"]) for model in GAN_MODELS]
 
 
 @router.get("/data-dates", response_model=list[settings.ForecastDate])
 async def get_forecast_dates(
-    model: Literal["jurre-brishti-ens", "mvua-kubwa-ens","jurre-brishti-count", "mvua-kubwa-count", "open-ifs"] | None = "jurre-brishti-ens",
+    model: Literal["jurre-brishti-ens", "mvua-kubwa-ens", "jurre-brishti-count", "mvua-kubwa-count", "open-ifs"] | None = "jurre-brishti-ens",
 ) -> list[settings.ForecastDate]:
     data_dates = get_forecast_data_dates(
         source=model,
-        mask_region=None if '-count' in model else COUNTRY_NAMES[0],
+        mask_region=None if "-count" in model else COUNTRY_NAMES[0],
     )
     return [settings.ForecastDate(date=data_date) for data_date in data_dates]
 

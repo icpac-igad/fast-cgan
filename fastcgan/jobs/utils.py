@@ -129,9 +129,9 @@ def get_forecast_initialization_times(
         data_date = fcst_dates[0]
     fcst_date = datetime.strptime(data_date, "%b %d, %Y").strftime("%Y%m%d")
     data_files = get_forecast_data_files(source=model)
-    if '-count' in model:
+    if "-count" in model:
         return {data_file.split("_")[2] for data_file in data_files if fcst_date in data_file}
-    return { data_file.split("_")[-1].replace("Z.nc","") for data_file in data_files if fcst_date in data_file}
+    return {data_file.split("_")[-1].replace("Z.nc", "") for data_file in data_files if fcst_date in data_file}
 
 
 def get_gan_forecast_dates(
