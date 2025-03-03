@@ -139,8 +139,10 @@ def get_gan_forecast_dates(
     mask_region: str | None = None,
 ):
     store_path = get_data_store_path(source=source, mask_region=mask_region)
+    if store_path is None:
+        return []
     data_files = get_directory_files(data_path=store_path, files=set())
-    return list({dfile.name.replace("Z.nc", "").split("-")[2] for dfile in data_files})
+    return list({dfile.name.replace("Z.nc", "").split("_" if 'count' in source else '-')[2] for dfile in data_files})
 
 
 def get_gan_forecast_initializations(

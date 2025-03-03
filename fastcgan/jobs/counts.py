@@ -27,11 +27,10 @@ def make_cgan_forecast_counts(
     output_dir = get_data_store_path(source=model_name)
     # input forecast file name
     in_file_name = f"{data_dir}/{model_name}/GAN_{year}{month:02d}{day:02d}_{hour:02d}Z.nc"
-    logger.debug(f"reading {model_name} forecast file {in_file_name}")
     # model incremetor time in hours
     multiplier = 6 if model_name == "jurre-brishti-count" else 24
     time_steps = 30 if model_name == "jurre-brishti-count" else 6
-
+    logger.debug(f"reading {model_name} forecast file {in_file_name} with multiplier {multiplier} and time steps {time_steps}")
     # Open a NetCDF file for reading
     nc_file = nc.Dataset(in_file_name, "r")
     latitude = np.array(nc_file["latitude"][:])
@@ -40,6 +39,7 @@ def make_cgan_forecast_counts(
     valid_time = np.array(nc_file["fcst_valid_time"][:])[0]
     precip = np.array(nc_file["precipitation"][:])
     nc_file.close()
+    logger.debug(f"completed reading input data file {in_file_name}")
 
     num_ensemble_members = precip.shape[1]
     # Define the bins we will use on an approximate log scale (mm/h)
