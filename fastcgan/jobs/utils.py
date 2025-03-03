@@ -16,7 +16,7 @@ from show_forecasts.data_utils import get_region_extent
 
 from fastcgan.jobs.stubs import cgan_ifs_literal, cgan_model_literal, open_ifs_literal
 from fastcgan.tools.config import settings
-from fastcgan.tools.constants import ACCUMULATION_UNITS, GAN_MODELS
+from fastcgan.tools.constants import ACCUMULATION_UNITS
 
 
 def get_possible_forecast_dates(data_date: str | None = None, dateback: int | None = 4) -> list[datetime.date]:
@@ -38,19 +38,16 @@ def get_data_store_path(
     source: str,
     mask_region: str | None = None,
     ens_ifs_models: list[str] | None = ["cgan-ifs-6h-ens", "cgan-ifs-7d-ens"],
-) -> Path:
-    if source in [model["name"] for model in GAN_MODELS]:
-        source = f"{source}-ens"
-
+) -> Path | None:
     if source == "jobs":
         data_dir_path = Path(settings.ASSETS_DIR_MAP["jobs"])
     else:
         base_dir = Path(settings.ASSETS_DIR_MAP["forecasts"]) / source
         data_dir_path = base_dir if mask_region is None or source in ens_ifs_models else base_dir / mask_region
 
-    # create directory tree
+    # return None if directory doesn't exist
     if not data_dir_path.exists():
-        data_dir_path.mkdir(parents=True, exist_ok=True)
+        return None
 
     return data_dir_path
 
@@ -73,9 +70,9 @@ def get_dataset_file_path(
 
 
 # recursive function that calls itself until all directories in data_path are traversed
-def get_directory_files(data_path: Path, files: set[Path] | None = set()) -> set[Path]:
+def get_directory_files(data_path: Path, files: set[Path] | None = set(), file_extension: str | None = "nc") -> set[Path]:
     for item in data_path.iterdir():
-        if item.is_file():
+        if item.is_file() and item.name.endswith(file_extension):
             files.add(item)
         elif item.is_dir():
             files.update(get_directory_files(data_path=item, files=files))
@@ -86,9 +83,10 @@ def get_forecast_data_files(
     source: str,
     mask_region: str | None = None,
 ) -> list[str]:
-    if source in [model["name"] for model in GAN_MODELS]:
-        source = f"{source}-ens"
     store_path = get_data_store_path(source=source, mask_region=mask_region)
+    # return empty list if data directory path is invalid
+    if store_path is None:
+        return []
     data_files = get_directory_files(data_path=store_path, files=set())
     return [str(dfile).split("/")[-1] for dfile in data_files]
 
@@ -103,8 +101,6 @@ def get_forecast_data_dates(
     mask_region: str | None = None,
     strict: bool | None = True,
 ) -> list[str]:
-    if source in [model["name"] for model in GAN_MODELS]:
-        source = f"{source}-ens"
     data_files = get_forecast_data_files(source=source, mask_region=mask_region)
     if "-count" in source:
         data_dates = sorted({dfile.replace(".nc", "").split("_")[1] for dfile in data_files})
@@ -124,13 +120,18 @@ def get_forecast_data_dates(
 
 
 def get_forecast_initialization_times(
-    data_date: str | None = None, model: Literal["jurre-brishti-ens", "jurre-bristi-count"] | None = "jurre-brishti-ens"
+    data_date: str | None = None, model: Literal["jurre-brishti-ens", "jurre-brishti-count"] | None = "jurre-brishti-ens"
 ) -> list[str]:
     if data_date is None:
-        data_date = get_forecast_data_dates(source=model)[0]
+        fcst_dates = get_forecast_data_dates(source=model)
+        if not len(fcst_dates):
+            return []
+        data_date = fcst_dates[0]
     fcst_date = datetime.strptime(data_date, "%b %d, %Y").strftime("%Y%m%d")
     data_files = get_forecast_data_files(source=model)
-    return [data_file.replace("Z.nc").split("_")[1] for data_file in data_files if fcst_date in data_file]
+    if '-count' in model:
+        return {data_file.split("_")[2] for data_file in data_files if fcst_date in data_file}
+    return { data_file.split("_")[-1].replace("Z.nc","") for data_file in data_files if fcst_date in data_file}
 
 
 def get_gan_forecast_dates(

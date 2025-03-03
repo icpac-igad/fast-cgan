@@ -22,7 +22,7 @@ class OpenIfsParams(BaseModel):
 
 
 class GanForecastParams(BaseModel):
-    model: cgan_model_literal | None = GAN_MODELS[0]["name"]
+    model: cgan_model_literal | None = f'{GAN_MODELS[0]["name"]}-ens'
     mask_area: str | None = COUNTRY_NAMES[0]
     forecast_date: str | None = None
     init_time: InitializationTime | None = InitializationTime.midnight

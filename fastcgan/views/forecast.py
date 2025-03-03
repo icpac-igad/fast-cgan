@@ -26,7 +26,7 @@ from fastcgan.views.tools import get_forecast_maps_path
 
 
 async def cgan_forecast(
-    model: cgan_model_literal | None = GAN_MODELS[0]["name"],
+    model: cgan_model_literal | None = f'{GAN_MODELS[0]["name"]}-ens',
     vis_param: IfsDataParameter | None = IfsDataParameter.tp,
     plot_units: PrecipitationUnit | None = PrecipitationUnit.half_day,
     acc_time: AccumulationTime | None = AccumulationTime.half_day,
@@ -42,7 +42,7 @@ async def cgan_forecast(
             source=model,
         )[0]
     if valid_time is None:
-        valid_time = ValidityTime.plus30h if model == "jurre-brishti" else ValidityTime.plus6h
+        valid_time = ValidityTime.plus30h if "jurre-brishti" in model else ValidityTime.plus6h
     data_date_obj = datetime.strptime(forecast_date, "%b %d, %Y")
     maps_path = await get_forecast_maps_path(
         source=model,
@@ -60,10 +60,10 @@ async def cgan_forecast(
         data_store = get_data_store_path(source=model)
         try:
             data = load_GAN_forecast(
-                model=f"{model}-ens",
+                model=model,
                 init_date=data_date_obj,
                 init_time=init_time.value.replace("h", ""),
-                data_dir=str(data_store).replace(f"/{model}-ens", ""),
+                data_dir=str(data_store).replace(f"/{model}", ""),
                 mask_region=mask_area,
                 cgan_ui_fs=True,
             )
@@ -72,7 +72,7 @@ async def cgan_forecast(
             return []
         plot_GAN_forecast(
             data=data,
-            model=f"{model}-ens",
+            model=model,
             style=color_style.value,
             plot_units=plot_units.value,
             accumulation_time=acc_time.value,
@@ -85,7 +85,7 @@ async def cgan_forecast(
 
 
 async def cgan_forecast_ensemble(
-    model: cgan_model_literal | None = GAN_MODELS[0]["name"],
+    model: cgan_model_literal | None = f'{GAN_MODELS[0]["name"]}-ens',
     vis_param: IfsDataParameter | None = IfsDataParameter.tp,
     plot_units: PrecipitationUnit | None = PrecipitationUnit.half_day,
     init_time: InitializationTime | None = InitializationTime.midnight,
@@ -102,7 +102,7 @@ async def cgan_forecast_ensemble(
             source=model,
         )[0]
     if valid_time is None:
-        valid_time = ValidityTime.plus30h if model == "jurre-brishti" else ValidityTime.plus6h
+        valid_time = ValidityTime.plus30h if "jurre-brishti" in model else ValidityTime.plus6h
     data_date_obj = datetime.strptime(forecast_date, "%b %d, %Y")
     maps_path = await get_forecast_maps_path(
         source=model,
@@ -120,10 +120,10 @@ async def cgan_forecast_ensemble(
         data_store = get_data_store_path(source=model)
         try:
             data = load_GAN_forecast(
-                model=f"{model}-ens",
+                model=model,
                 init_date=data_date_obj,
                 init_time=init_time.value.replace("h", ""),
-                data_dir=str(data_store).replace(f"/{model}-ens", ""),
+                data_dir=str(data_store).replace(f"/{model}", ""),
                 mask_region=mask_area,
                 cgan_ui_fs=True,
             )
@@ -132,7 +132,7 @@ async def cgan_forecast_ensemble(
             return []
         plot_GAN_ensemble(
             data=data,
-            model=f"{model}-ens",
+            model=model,
             valid_time_start_hour=valid_time.value,
             style=color_style.value,
             plot_units=plot_units.value,
@@ -145,7 +145,7 @@ async def cgan_forecast_ensemble(
 
 
 async def cgan_threshold_chance(
-    model: cgan_model_literal | None = GAN_MODELS[0]["name"],
+    model: cgan_model_literal | None = f'{GAN_MODELS[0]["name"]}-ens',
     threshold: float | None = 5,
     vis_param: IfsDataParameter | None = IfsDataParameter.tp,
     plot_units: PrecipitationUnit | None = PrecipitationUnit.half_day,
@@ -163,7 +163,7 @@ async def cgan_threshold_chance(
             source=model,
         )[0]
     if valid_time is None:
-        valid_time = ValidityTime.plus30h if model == "jurre-brishti" else ValidityTime.plus6h
+        valid_time = ValidityTime.plus30h if "jurre-brishti" in model else ValidityTime.plus6h
     data_date_obj = datetime.strptime(forecast_date, "%b %d, %Y")
     maps_path = await get_forecast_maps_path(
         source=model,
@@ -181,10 +181,10 @@ async def cgan_threshold_chance(
         data_store = get_data_store_path(source=model)
         try:
             data = load_GAN_forecast(
-                model=f"{model}-ens",
+                model=model,
                 init_date=data_date_obj,
                 init_time=init_time.value.replace("h", ""),
-                data_dir=str(data_store).replace(f"/{model}-ens", ""),
+                data_dir=str(data_store).replace(f"/{model}", ""),
                 mask_region=mask_area,
                 cgan_ui_fs=True,
             )
@@ -193,7 +193,7 @@ async def cgan_threshold_chance(
             return []
         plot_GAN_threshold_chance(
             data=data,
-            model=f"{model}-ens",
+            model=model,
             style=color_style.value,
             threshold=threshold,
             plot_units=plot_units.value,

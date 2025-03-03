@@ -73,8 +73,6 @@ if __name__ == "__main__":
             schedule.every().day.at(f"{str(hour).rjust(2, '0')}:00", "Africa/Nairobi").do(generate_cgan_forecasts, model=source)
 
         elif source == "open-ifs":
-            # post_process_downloaded_ecmwf_forecasts(source="open-ifs")
-            # syncronize_open_ifs_forecast_data()
             for hour in range(11, 24, 1):
                 schedule.every().day.at(f"{str(hour).rjust(2, '0')}:00", "Africa/Nairobi").do(syncronize_open_ifs_forecast_data, dateback=1)
                 schedule.every().day.at(f"{str(hour).rjust(2, '0')}:00", "Africa/Nairobi").do(

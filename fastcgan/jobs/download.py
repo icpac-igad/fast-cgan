@@ -314,7 +314,7 @@ def generate_cgan_forecasts(model: cgan_model_literal, mask_region: str | None =
                         make_cgan_forecast_counts(
                             date_str=date_str,
                             hour_str=init_time,
-                            model_name=model.replace("-count", ""),
+                            model_name=model,
                         )
                     else:
                         save_to_new_filesystem_structure(

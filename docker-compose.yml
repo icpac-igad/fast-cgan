@@ -48,7 +48,6 @@ services:
     restart: ${RESTART_POLICY:-always}
     command: ${OPEN_IFS_JOBS_CMD:-python fastcgan/jobs/manager.py -s 'open-ifs'}
     environment:
-      - SECRET_KEY
       - WORK_HOME=${WORK_HOME:-/opt/cgan}
       - JOBS_DATA_DIR=${APP_JOBS_DATA_DIR:-/opt/cgan/jobs}
       - FORECASTS_DATA_DIR=${APP_FORECASTS_DATA_DIR:-/opt/cgan/forecasts}
