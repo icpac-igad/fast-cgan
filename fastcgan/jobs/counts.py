@@ -89,7 +89,9 @@ def make_cgan_forecast_counts(
     logger.debug("saving each valid time in a different file")
     for valid_time_num in range(len(valid_time)):
         # counts in bin zero are not stored.
-        pref_outdir = f"{output_dir}/{year}/{month:02d}"
+        pref_outdir = Path(f"{output_dir}/{year}/{month:02d}")
+        if not pref_outdir.exists():
+            pref_outdir.mkdir(parents=True, exist_ok=True)
         fcst_valid_time = valid_time_num * multiplier + time_steps
         file_name = f"{pref_outdir}/counts_{year}{month:02d}{day:02d}_{hour:02d}_{fcst_valid_time}h.nc"
 
