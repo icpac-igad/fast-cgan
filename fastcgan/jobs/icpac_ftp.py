@@ -11,20 +11,20 @@ from fastcgan.jobs.utils import get_data_store_path
 
 
 def deep_crawl_http_dataset_links(data_page: str, data_ext: str | None = "nc", links: set[str] | None = set()) -> list[str]:
-    logger.debug(f'starting data links crawler task for {data_page}')
+    logger.debug(f"starting data links crawler task for {data_page}")
     r = requests.get(data_page, allow_redirects=True)
     if r.status_code == 200:
         soup = BeautifulSoup(r.text, features="html.parser")
         today = datetime.now()
         env = getenv("ENVIRONMENT", "local")
-        sync_months = getenv("SYNC_DATA_MONTHS", str(today.month).rjust(2,"0"))
-        link_regx = data_page + r'/([a-zA-Z0-9%\s]{5,15})/'
+        sync_months = getenv("SYNC_DATA_MONTHS", str(today.month).rjust(2, "0"))
+        link_regx = data_page + r"/([a-zA-Z0-9%\s]{5,15})/"
         entry_ptn = compile(link_regx)
         for a in soup.find_all("a"):
             href = f"{data_page}/{a['href']}"
             if href.endswith(data_ext):
                 links.add(href)
-            if env in ["production","staging"]:
+            if env in ["production", "staging"]:
                 if "../" not in href and href.endswith("/"):
                     links = deep_crawl_http_dataset_links(data_page=href[:-1], links=links)
             elif bool(entry_ptn.match(href)):
@@ -32,7 +32,7 @@ def deep_crawl_http_dataset_links(data_page: str, data_ext: str | None = "nc", l
                     links = deep_crawl_http_dataset_links(data_page=f"{href}{today.year}/{month}", links=links)
         logger.info(f"crawled a total of {len(links)} data files from {data_page}")
     else:
-        logger.warning(f"failed to crawl links from {data_page} with status code {r.status_code} and response text {r.text}")
+        logger.warning(f"failed to crawl links from {data_page} with status code {r.status_code} due to {r.reason}")
     return links
 
 
