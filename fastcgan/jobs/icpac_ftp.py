@@ -17,10 +17,7 @@ def deep_crawl_http_dataset_links(data_page: str, data_ext: str | None = "nc", l
         soup = BeautifulSoup(r.text, features="html.parser")
         today = datetime.now()
         env = getenv("ENVIRONMENT", "local")
-        sync_months = getenv(
-            "SYNC_DATA_MONTHS",
-            f"{str(today.month).rjust(2, '0')}" if today.month == 1 else f"{str(today.month).rjust(2, '0')},{str(today.month-1).rjust(2, '0')}",
-        )
+        sync_months = getenv("SYNC_DATA_MONTHS", f"{str(today.month).rjust(2, '0')}")
         link_regx = data_page + r"/([a-zA-Z0-9%\s]{5,15})/"
         entry_ptn = compile(link_regx)
         for a in soup.find_all("a"):
@@ -33,10 +30,10 @@ def deep_crawl_http_dataset_links(data_page: str, data_ext: str | None = "nc", l
             else:
                 if "open-ifs" in href and bool(entry_ptn.match(href)):
                     for month in sync_months.split(","):
-                        links = deep_crawl_http_dataset_links(data_page=f"{href}{today.year}/{month}/", links=links)
+                        links = deep_crawl_http_dataset_links(data_page=f"{href}{today.year}/{month}", links=links)
                 elif "../" not in href and href.endswith("/") and str(today.year) in href:
                     for month in sync_months.split(","):
-                        links = deep_crawl_http_dataset_links(data_page=f"{href}{month}/", links=links)
+                        links = deep_crawl_http_dataset_links(data_page=f"{href}{month}", links=links)
         logger.info(f"crawled a total of {len(links)} data files from {data_page}")
     else:
         logger.warning(f"failed to crawl links from {data_page} with status code {r.status_code} due to {r.reason}")
