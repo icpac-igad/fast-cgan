@@ -1,7 +1,7 @@
-from argparse import ArgumentParser
+from argparse import ArgumentParser  # noqa: I001
 from datetime import datetime
 from typing import Literal
-
+from os import getenv
 import requests
 from bs4 import BeautifulSoup
 from loguru import logger
@@ -14,12 +14,20 @@ def deep_crawl_http_dataset_links(data_page: str, data_ext: str | None = "nc", l
     r = requests.get(data_page, allow_redirects=True)
     if r.status_code == 200:
         soup = BeautifulSoup(r.text, features="html.parser")
+        today = datetime.now()
+        env = getenv("ENVIRONMENT", "local")
+        sync_months = getenv("SYNC_DATA_MONTHS", str(today.month).rjust(2,"0"))
         for a in soup.find_all("a"):
             href = f"{data_page}/{a['href']}"
             if href.endswith(data_ext):
                 links.add(href)
-            elif "../" not in href and href.endswith("/"):
-                links = deep_crawl_http_dataset_links(data_page=href[:-1], links=links)
+            if env in ["production","staging"]:
+                if "../" not in href and href.endswith("/"):
+                    links = deep_crawl_http_dataset_links(data_page=href[:-1], links=links)
+            else:
+                for month in sync_months.split(","):
+                    if "../" not in href and (href.endswith(f"{today.year}/") or href.endswith(f"{today.year}/{month}/")):
+                        links = deep_crawl_http_dataset_links(data_page=href[:-1], links=links)
         logger.info(f"crawled a total of {len(links)} data files from {data_page}")
     else:
         logger.warning(f"failed to crawl links from {data_page} with status code {r.status_code} and response text {r.text}")
