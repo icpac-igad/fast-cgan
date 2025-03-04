@@ -16,7 +16,6 @@ from show_forecasts.data_utils import get_region_extent
 
 from fastcgan.jobs.stubs import cgan_ifs_literal, cgan_model_literal, open_ifs_literal
 from fastcgan.tools.config import settings
-from fastcgan.tools.constants import ACCUMULATION_UNITS
 
 
 def get_possible_forecast_dates(data_date: str | None = None, dateback: int | None = 4) -> list[datetime.date]:
@@ -47,7 +46,7 @@ def get_data_store_path(
 
     # return None if directory doesn't exist
     if not data_dir_path.exists():
-        return None
+        data_dir_path.mkdir(parents=True, exist_ok=True)
 
     return data_dir_path
 
@@ -84,9 +83,6 @@ def get_forecast_data_files(
     mask_region: str | None = None,
 ) -> list[str]:
     store_path = get_data_store_path(source=source, mask_region=mask_region)
-    # return empty list if data directory path is invalid
-    if store_path is None:
-        return []
     data_files = get_directory_files(data_path=store_path, files=set())
     return [str(dfile).split("/")[-1] for dfile in data_files]
 
@@ -346,12 +342,6 @@ def get_possible_variables(print_variables=True):
         print()
 
     return list(DATA_PARAMS.keys())
-
-
-def get_accumulation_units(acc_time: str) -> str | None:
-    if acc_time in ACCUMULATION_UNITS.keys():
-        return ACCUMULATION_UNITS[acc_time]
-    return None
 
 
 def get_exceedence_normalization(threshold: dict[str, str], acc_time: str) -> int | float:

@@ -1,7 +1,5 @@
 from enum import Enum
 
-# from show_forecasts.constants import ACCUMULATION_UNITS
-
 
 class IfsDataParameter(Enum):
     tp = "Total precipitation"
@@ -16,7 +14,7 @@ class PrecipitationUnit(Enum):
     hour = "mm/h"
     half_day = "mm/6h"
     day = "mm/day"
-    week = "mm/week"
+    # week = "mm/week"
 
 
 class AccumulationTime(Enum):

@@ -23,10 +23,13 @@ async def open_ifs_forecast(
 ) -> list[list[Path], xr.Dataset | None]:
     source = "open-ifs"
     if forecast_date is None:
-        forecast_date = get_forecast_data_dates(
+        forecast_dates = get_forecast_data_dates(
             mask_region=mask_area,
             source=source,
-        )[0]
+        )
+        if not len(forecast_dates):
+            return []
+        forecast_date = forecast_dates[0]
     data_date_obj = datetime.strptime(forecast_date, "%b %d, %Y")
     maps_path = await get_forecast_maps_path(
         source=source,
@@ -71,10 +74,13 @@ async def open_ifs_forecast_ensemble(
     vis_param = IfsDataParameter.tp
     source = "open-ifs"
     if forecast_date is None:
-        forecast_date = get_forecast_data_dates(
+        forecast_dates = get_forecast_data_dates(
             mask_region=COUNTRY_NAMES[0],
             source=source,
-        )[0]
+        )
+        if not len(forecast_dates):
+            return []
+        forecast_date = forecast_dates[0]
     data_date_obj = datetime.strptime(forecast_date, "%b %d, %Y")
     maps_path = await get_forecast_maps_path(
         source=source,

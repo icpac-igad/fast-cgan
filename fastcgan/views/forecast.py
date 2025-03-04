@@ -37,10 +37,13 @@ async def cgan_forecast(
     color_style: MapColorScheme | None = MapColorScheme.icpac,
 ) -> list[list[Path], xr.Dataset | None]:
     if forecast_date is None:
-        forecast_date = get_forecast_data_dates(
+        forecast_dates = get_forecast_data_dates(
             mask_region=COUNTRY_NAMES[0],
             source=model,
-        )[0]
+        )
+        if not len(forecast_dates):
+            return []
+        forecast_date = forecast_dates[0]
     if valid_time is None:
         valid_time = ValidityTime.plus30h if "jurre-brishti" in model else ValidityTime.plus6h
     data_date_obj = datetime.strptime(forecast_date, "%b %d, %Y")
@@ -97,10 +100,13 @@ async def cgan_forecast_ensemble(
     **kwagrs,
 ) -> list[Path]:
     if forecast_date is None:
-        forecast_date = get_forecast_data_dates(
+        forecast_dates = get_forecast_data_dates(
             mask_region=COUNTRY_NAMES[0],
             source=model,
-        )[0]
+        )
+        if not len(forecast_dates):
+            return []
+        forecast_date = forecast_dates[0]
     if valid_time is None:
         valid_time = ValidityTime.plus30h if "jurre-brishti" in model else ValidityTime.plus6h
     data_date_obj = datetime.strptime(forecast_date, "%b %d, %Y")
@@ -158,10 +164,13 @@ async def cgan_threshold_chance(
     **kwargs,
 ) -> list[Path]:
     if forecast_date is None:
-        forecast_date = get_forecast_data_dates(
+        forecast_dates = get_forecast_data_dates(
             mask_region=COUNTRY_NAMES[0],
             source=model,
-        )[0]
+        )
+        if not len(forecast_dates):
+            return []
+        forecast_date = forecast_dates[0]
     if valid_time is None:
         valid_time = ValidityTime.plus30h if "jurre-brishti" in model else ValidityTime.plus6h
     data_date_obj = datetime.strptime(forecast_date, "%b %d, %Y")
