@@ -71,9 +71,10 @@ def download_cgan_ifs_ens_dataset(model_name: Literal["cgan-ifs-6h-ens", "cgan-i
     destination = jobs_dir / model_name
     if not destination.exists():
         destination.mkdir(parents=True, exist_ok=True)
-    file_name = link.split("/")[-1]
-    file_path = destination / file_name
-    if not file_path.exists():
+    link_parts = link.split("/")[-1]
+    file_path = destination / link_parts[-1]
+    ifs_file_path = get_data_store_path(source=model_name) / link_parts[-3] / link_parts[-2] / link_parts[-1]
+    if not file_path.exists() and not ifs_file_path.exists():
         logger.debug(f"trying download of {link}")
         try:
             with requests.get(link, stream=True) as r:
