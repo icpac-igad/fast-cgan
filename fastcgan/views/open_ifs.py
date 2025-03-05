@@ -55,8 +55,8 @@ async def open_ifs_forecast(
             return []
         plot_open_ifs_forecast(
             data=data,
-            style=MapColorScheme.icpac if color_style is None else color_style,
-            plot_units=plot_units,
+            style=MapColorScheme.icpac if color_style is None else color_style.value,
+            plot_units=plot_units.value,
             region=mask_area,
             file_name=str(maps_path[-1]),
             show_plot=False,
@@ -106,8 +106,8 @@ async def open_ifs_forecast_ensemble(
             return []
         plot_ifs_forecast_ensemble(
             data=data,
-            style=MapColorScheme.icpac if color_style is None else color_style,
-            plot_units=plot_units,
+            style=MapColorScheme.icpac if color_style is None else color_style.value,
+            plot_units=plot_units.value,
             region=mask_area,
             file_name=str(maps_path[-1]),
             show_plot=False,
