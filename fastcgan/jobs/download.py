@@ -7,7 +7,6 @@ from os import getenv
 from pathlib import Path
 from time import sleep
 
-import cfgrib
 import xarray as xr
 from loguru import logger
 from show_forecasts.constants import COUNTRY_NAMES, DATA_PARAMS
@@ -36,29 +35,34 @@ from fastcgan.jobs.utils import (
 
 def read_dataset(file_path: str | Path, mask_area: str | None = COUNTRY_NAMES[0]) -> xr.Dataset:
     try:
-        ds = cfgrib.open_datasets(str(file_path))
+        import cfgrib
     except Exception as err:
-        logger.error(f"failed to read {file_path} dataset file with error {err}")
-        return None
-    if isinstance(ds, list):
-        arrays = []
-        for i in range(len(ds)):
-            if "number" in ds[i].dims:
-                arrays.append(standardize_dataset(ds[i]))
+        logger.error(f"cgrib is not available for ECMWF data processing. attempt failed with error {err}")
+    else:
         try:
-            ds = xr.merge(arrays, compat="override")
+            ds = cfgrib.open_datasets(str(file_path))
         except Exception as err:
-            logger.error(f"failed to read dataset {file_path} with error {err}")
-    try:
-        data_params = [data_param for data_param in DATA_PARAMS.keys() if data_param != "wind"]
-        data_params.extend(["u10", "v10"])
-        return slice_dataset_by_bbox(
-            standardize_dataset(ds[data_params]),
-            get_region_extent(shape_name=mask_area),
-        )
-    except Exception as err:
-        logger.error(f"processing for {file_path} failed with error {err}")
-        return None
+            logger.error(f"failed to read {file_path} dataset file with error {err}")
+            return None
+        if isinstance(ds, list):
+            arrays = []
+            for i in range(len(ds)):
+                if "number" in ds[i].dims:
+                    arrays.append(standardize_dataset(ds[i]))
+            try:
+                ds = xr.merge(arrays, compat="override")
+            except Exception as err:
+                logger.error(f"failed to read dataset {file_path} with error {err}")
+        try:
+            data_params = [data_param for data_param in DATA_PARAMS.keys() if data_param != "wind"]
+            data_params.extend(["u10", "v10"])
+            return slice_dataset_by_bbox(
+                standardize_dataset(ds[data_params]),
+                get_region_extent(shape_name=mask_area),
+            )
+        except Exception as err:
+            logger.error(f"processing for {file_path} failed with error {err}")
+            return None
 
 
 def clean_grib2_index_files(source: str | None = "open-ifs"):
@@ -189,26 +193,31 @@ def post_process_ecmwf_grib2_dataset(
 def post_process_downloaded_ecmwf_forecasts(
     source: open_ifs_literal | None = "open-ifs",
 ) -> None:
-    # run infinite loop that is executed when there are no other active workers
-    while True:
-        if not get_processing_task_status():
-            downloads_path = get_data_store_path(source="jobs") / source
-            if downloads_path.exists():
-                grib2_files = [dfile.name for dfile in downloads_path.iterdir() if dfile.name.endswith(".grib2")]
-                if not len(grib2_files):
-                    logger.warning("no un-processed open-ifs datasets found. task skipped!")
-                else:
-                    logger.info(f"starting batch post-processing tasks for {'  <---->  '.join(grib2_files)}")
-                    for grib2_file in grib2_files:
-                        post_process_ecmwf_grib2_dataset(
-                            source=source,
-                            grib2_file_name=grib2_file,
-                            force_process=True,
-                        )
-            # break the loop
-            break
-        # sleep for 10 minutes
-        sleep(60 * 10)
+    try:
+        import cfgrib  # noqa: F401
+    except Exception as err:
+        logger.error(f"cgrib is not available for ECMWF data processing. attempt failed with error {err}")
+    else:
+        # run infinite loop that is executed when there are no other active workers
+        while True:
+            if not get_processing_task_status():
+                downloads_path = get_data_store_path(source="jobs") / source
+                if downloads_path.exists():
+                    grib2_files = [dfile.name for dfile in downloads_path.iterdir() if dfile.name.endswith(".grib2")]
+                    if not len(grib2_files):
+                        logger.warning("no un-processed open-ifs datasets found. task skipped!")
+                    else:
+                        logger.info(f"starting batch post-processing tasks for {'  <---->  '.join(grib2_files)}")
+                        for grib2_file in grib2_files:
+                            post_process_ecmwf_grib2_dataset(
+                                source=source,
+                                grib2_file_name=grib2_file,
+                                force_process=True,
+                            )
+                # break the loop
+                break
+            # sleep for 10 minutes
+            sleep(60 * 10)
 
 
 def syncronize_open_ifs_forecast_data(
@@ -226,6 +235,13 @@ def syncronize_open_ifs_forecast_data(
     if not get_data_sycn_status(source="open-ifs", sync_type="download"):
         mask_region = getenv("DEFAULT_MASK", COUNTRY_NAMES[0])
         sync_icpac_ifs = getenv("USE_ICPAC_IFS", False)
+        if not sync_icpac_ifs:
+            try:
+                import cfgrib  # noqa: F401
+            except Exception as err:
+                logger.error(f"cgrib is not available for ECMWF data processing. attempt failed with error {err}")
+            else:
+                sync_icpac_ifs = True
         if sync_icpac_ifs:
             sync_icpac_ifs_data(model="open-ifs")
         else:
