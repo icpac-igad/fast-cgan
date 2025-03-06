@@ -138,7 +138,13 @@ def get_gan_forecast_dates(
     if store_path is None:
         return []
     data_files = get_directory_files(data_path=store_path, files=set())
-    return list({dfile.name.replace("Z.nc", "").split("_" if "count" in source else "-")[1 if 'count' in source else 2] for dfile in data_files})
+    if "count" in source:
+        data_dates = set()
+        for data_file in data_files:
+            file_parts = data_file.name.split("_")
+            data_dates.add(f"{file_parts[1]}_{file_parts[2]}")
+        return data_dates
+    return list({dfile.name.replace("Z.nc", "").split("-")[2] for dfile in data_files})
 
 
 def get_gan_forecast_initializations(
