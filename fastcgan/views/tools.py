@@ -30,7 +30,7 @@ async def get_forecast_maps_path(
 ) -> list[Path]:
     data_date_str = data_date.strftime("%Y_%m_%d")
     fname_str = (
-        f"{source.replace('-','_')}_ens-{mask_area.lower().replace(' ','_')}-"
+        f"{source.replace('-','_')}-{mask_area.lower().replace(' ','_')}-"
         + f"{vis_param.value.lower().replace(' ','_')}-{plot_units.value.replace('/','_')}"
         + f"-{color_style.value.lower()}-{data_date_str}"
     )
