@@ -234,7 +234,7 @@ def syncronize_open_ifs_forecast_data(
 
     if not get_data_sycn_status(source="open-ifs", sync_type="download"):
         mask_region = getenv("DEFAULT_MASK", COUNTRY_NAMES[0])
-        sync_icpac_ifs = getenv("USE_ICPAC_IFS", False)
+        sync_icpac_ifs = True if getenv("USE_ICPAC_IFS", 'false').lower() in ["yes","y","true","t","1"] else False
         if not sync_icpac_ifs:
             try:
                 import cfgrib  # noqa: F401
@@ -443,7 +443,7 @@ if __name__ == "__main__":
     dict_args = {key: value for key, value in args.__dict__.items() if key != "command"}
     if args.command == "sync":
         if args.model == "open-ifs":
-            syncronize_open_ifs_forecast_data(**dict_args)
+            syncronize_open_ifs_forecast_data(**{key: value for key, value in dict_args.items() if key != "model"})
         elif args.model == "jurre-brishti" or args.model == "mvua-kubwa":
             syncronize_post_processed_ifs_data(model=args.model)
     else:
