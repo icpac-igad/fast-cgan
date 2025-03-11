@@ -234,14 +234,13 @@ def syncronize_open_ifs_forecast_data(
 
     if not get_data_sycn_status(source="open-ifs", sync_type="download"):
         mask_region = getenv("DEFAULT_MASK", COUNTRY_NAMES[0])
-        sync_icpac_ifs = True if getenv("USE_ICPAC_IFS", 'false').lower() in ["yes","y","true","t","1"] else False
+        sync_icpac_ifs = True if getenv("USE_ICPAC_IFS", "false").lower() in ["yes", "y", "true", "t", "1"] else False
         if not sync_icpac_ifs:
             try:
                 import cfgrib  # noqa: F401
             except Exception as err:
-                logger.error(f"cgrib is not available for ECMWF data processing. attempt failed with error {err}")
-            else:
                 sync_icpac_ifs = True
+                logger.error(f"cgrib is not available for ECMWF data processing. attempt failed with error {err}")
         if sync_icpac_ifs:
             sync_icpac_ifs_data(model="open-ifs")
         else:
