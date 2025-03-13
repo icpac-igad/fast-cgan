@@ -222,7 +222,7 @@ def save_to_new_filesystem_structure(
             else:
                 logger.debug(f"succeefully saved dataset file {file_path} to {target_file}")
                 store = get_data_store_path(source=source)
-                store_files = [fpath.name for fpath in store.iterdir() if fpath.name.endwith('.nc')]
+                store_files = [fpath.name for fpath in store.iterdir() if fpath.name.endswith(".nc")]
                 logger.debug(f"data directory files {' -> '.join(store_files)}")
                 if source not in ens_ifs_models:  # split cGAN forecasts by country
                     for country_name in COUNTRY_NAMES[1:]:
