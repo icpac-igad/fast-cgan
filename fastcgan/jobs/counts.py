@@ -30,6 +30,9 @@ def make_cgan_forecast_counts(
     # model incremetor time in hours
     multiplier = 6 if model_name == "jurre-brishti-count" else 24
     time_steps = 30 if model_name == "jurre-brishti-count" else 6
+    if not Path(in_file_name).exists():
+        logger.error(f"{model_name} forecast file {in_file_name} does not exist on the filesystem")
+        return None
     logger.debug(f"reading {model_name} forecast file {in_file_name} with multiplier {multiplier} and time steps {time_steps}")
     # Open a NetCDF file for reading
     nc_file = nc.Dataset(in_file_name, "r")
