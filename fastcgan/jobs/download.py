@@ -285,7 +285,7 @@ def syncronize_open_ifs_forecast_data(
         set_data_sycn_status(sync_type="download", source="open-ifs", status=False)
 
 
-def generate_cgan_forecasts(model: cgan_model_literal, mask_region: str | None = COUNTRY_NAMES[0]):
+def generate_cgan_forecasts(model: cgan_model_literal, mask_region: str | None = COUNTRY_NAMES[0], min_gbmc_size: int | None = 260):
     # start an infinite loop that will execute when other data-processing jobs are completed
     while True:
         if not get_processing_task_status():
@@ -321,9 +321,14 @@ def generate_cgan_forecasts(model: cgan_model_literal, mask_region: str | None =
                 )
                 cgan_file_path = get_data_store_path(source="jobs") / model / f"GAN_{date_str}_{init_time}Z.nc"
                 if gan_status:
-                    logger.error(f"failed to generate {model} cGAN forecast for {missing_date}")
-                    gbmc_filename.unlink(missing_ok=True)
+                    logger.error(f"failed to generate {model} cGAN forecast for {missing_date}. deleting intermediary forecast file {cgan_file_path}")
                     cgan_file_path.unlink(missing_ok=True)
+                    if gbmc_filename.stat().st_size / (1024 * 1024) < min_gbmc_size:
+                        logger.error(
+                            f"deleting intermediarty IFS file {gbmc_filename} due "
+                            + f"to invalid size of {round(gbmc_filename.stat().st_size / (1024 * 1024), 2)} Mib"
+                        )
+                        gbmc_filename.unlink(missing_ok=True)
                 else:
                     if "count" in model:
                         make_cgan_forecast_counts(
