@@ -2,6 +2,7 @@ import concurrent
 from argparse import ArgumentParser
 from multiprocessing import cpu_count
 from os import getenv
+from pathlib import Path
 
 from loguru import logger
 from paramiko import AutoAddPolicy, SFTPClient
@@ -59,14 +60,16 @@ def fetch_remote_file(
         logger.error(f"failed to open sftp transfer tunnel with error {sftp}")
         return None
     logger.debug(f"successfully opened sftp transfer tunnel for {file_name}")
+    if not Path(local_path).esists():
+        Path(local_path).mkdir(parents=True)
     try:
         logger.debug(f"fetching data contents for {remote_path} and saving into {local_path}")
         # stream data and save on disk for ingestion
-        sftp.get(remotepath=remote_path, localpath=local_path)
+        sftp.get(remotepath=remote_path, localpath=Path(f"{local_path}/{file_name}"))
     except Exception as err:
         logger.error(f"failed to fetch sftp file from path {remote_path} with error {err}")
         return None
-    logger.info(f"successfully downloaded data file {remote_path} and saved into {local_path}")
+    logger.info(f"successfully downloaded data file {remote_path} and saved into {local_path}/{file_name}")
     return file_name
 
 
@@ -99,7 +102,7 @@ def sync_sftp_data_files(
             executor.submit(
                 fetch_remote_file,
                 remote_path=f"{src_dir}/{ifs_file}",
-                local_path=f"{dest_dir}/{ifs_file}",
+                local_path=dest_dir,
             )
             for ifs_file in to_sync
         ]
