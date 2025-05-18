@@ -60,7 +60,7 @@ def fetch_remote_file(
         logger.error(f"failed to open sftp transfer tunnel with error {sftp}")
         return None
     logger.debug(f"successfully opened sftp transfer tunnel for {file_name}")
-    if not Path(local_path).esists():
+    if not Path(local_path).exists():
         Path(local_path).mkdir(parents=True)
     try:
         logger.debug(f"fetching data contents for {remote_path} and saving into {local_path}")
