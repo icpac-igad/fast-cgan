@@ -46,7 +46,7 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: ${RESTART_POLICY:-always}
-    command: ${OPEN_IFS_JOBS_CMD:-python fastcgan/jobs/manager.py -s 'open-ifs'}
+    command: ${OPEN_IFS_JOBS_CMD:-python fastcgan/jobs/open_ifs.py}
     environment:
       - WORK_HOME=${WORK_HOME:-/opt/cgan}
       - JOBS_DATA_DIR=${APP_JOBS_DATA_DIR:-/opt/cgan/jobs}
@@ -67,7 +67,7 @@ services:
         - GAN_BRANCH=Jurre_brishti
         - PYTHON_VERSION=3.10
     restart: ${RESTART_POLICY:-always}
-    command: ${JURRE_ENS_JOBS_CMD:-python fastcgan/jobs/manager.py -s 'jurre-brishti-ens'}
+    command: ${JURRE_ENS_JOBS_CMD:-python fastcgan/jobs/cgan_ifs.py -m 'jurre-brishti-ens'}
     environment:
       - WORK_HOME=${WORK_HOME:-/opt/cgan}
       - JOBS_DATA_DIR=${APP_JOBS_DATA_DIR:-/opt/cgan/jobs}
@@ -97,7 +97,7 @@ services:
         - GAN_BRANCH=Jurre_brishti
         - PYTHON_VERSION=3.10
     restart: ${RESTART_POLICY:-always}
-    command: ${JURRE_ENS_JOBS_CMD:-python fastcgan/jobs/manager.py -s 'jurre-brishti-count'}
+    command: ${JURRE_ENS_JOBS_CMD:-python fastcgan/jobs/cgan_ifs.py -m 'jurre-brishti-count'}
     environment:
       - WORK_HOME=${WORK_HOME:-/opt/cgan}
       - JOBS_DATA_DIR=${APP_JOBS_DATA_DIR:-/opt/cgan/jobs}
@@ -127,7 +127,7 @@ services:
         - GAN_BRANCH=Mvua_kubwa
         - PYTHON_VERSION=3.10
     restart: ${RESTART_POLICY:-always}
-    command: ${MVUA_ENS_JOBS_CMD:-python fastcgan/jobs/manager.py -s 'mvua-kubwa-ens'}
+    command: ${MVUA_ENS_JOBS_CMD:-python fastcgan/jobs/cgan_ifs.py -m 'mvua-kubwa-ens'}
     environment:
       - WORK_HOME=${WORK_HOME:-/opt/cgan}
       - JOBS_DATA_DIR=${APP_JOBS_DATA_DIR:-/opt/cgan/jobs}
@@ -157,7 +157,7 @@ services:
         - GAN_BRANCH=Mvua_kubwa
         - PYTHON_VERSION=3.10
     restart: ${RESTART_POLICY:-always}
-    command: ${MVUA_ENS_JOBS_CMD:-python fastcgan/jobs/manager.py -s 'mvua-kubwa-count'}
+    command: ${MVUA_ENS_JOBS_CMD:-python fastcgan/jobs/cgan_ifs.py -m 'mvua-kubwa-ens'}
     environment:
       - WORK_HOME=${WORK_HOME:-/opt/cgan}
       - JOBS_DATA_DIR=${APP_JOBS_DATA_DIR:-/opt/cgan/jobs}

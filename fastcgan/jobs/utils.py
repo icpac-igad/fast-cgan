@@ -42,7 +42,7 @@ def get_data_store_path(
         data_dir_path = Path(settings.ASSETS_DIR_MAP["jobs"])
     else:
         base_dir = Path(settings.ASSETS_DIR_MAP["forecasts"]) / source
-        data_dir_path = base_dir if mask_region is None or source in ens_ifs_models else base_dir / mask_region
+        data_dir_path = base_dir if mask_region is None or source in ens_ifs_models else Path(f'{base_dir}/{mask_region}')
 
     # return None if directory doesn't exist
     if not data_dir_path.exists():
