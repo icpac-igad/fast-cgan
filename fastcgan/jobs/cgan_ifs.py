@@ -73,9 +73,10 @@ def generate_cgan_forecasts(
                 py_script = (
                     "forecast_date.py" if "mvua-kubwa" in model else "test_forecast.py"
                 )
+                model_dir = "Mvua_Kubwa" if 'mvua-kubwa' in model else "Jurre_Brishti"
                 gan_status = subprocess.call(
                     shell=True,
-                    cwd=f'{getenv("WORK_HOME","/opt/cgan")}/ensemble-cgan/dsrnngan',
+                    cwd=f'{getenv("WORK_HOME","/opt/cgan")}/{model_dir}/ensemble-cgan/dsrnngan',
                     args=f"python {py_script} -f {gan_ifs}",
                 )
                 cgan_file_path = (

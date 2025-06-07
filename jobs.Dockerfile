@@ -24,7 +24,10 @@ ARG GROUP_ID=1000
 ARG USER_NAME=job
 ARG WORK_HOME=/opt/cgan
 ARG GAN_REPO=https://github.com/jaysnm/ensemble-cgan.git
-ARG GAN_BRANCH=Jurre_brishti
+ARG JURRE_BRANCH=Jurre_brishti
+ARG JURRE_DIR=Jurre_Brishti
+ARG MVUA_BRANCH=Mvua_kubwa
+ARG MVUA_DIR=Mvua_Kubwa
 
 # install system libraries
 RUN apt-get update -y && \
@@ -42,11 +45,12 @@ USER ${USER_NAME}
 WORKDIR ${WORK_HOME}
 ENV PATH=${WORK_HOME}/.local/bin:$PATH
 
-RUN git clone ${GAN_REPO} -b ${GAN_BRANCH} ${WORK_HOME}/ensemble-cgan && \
-    cd ${WORK_HOME}/ensemble-cgan && pip install --upgrade pip && pip install --no-cache-dir -e .
+RUN git clone ${GAN_REPO} -b ${JURRE_BRANCH} ${WORK_HOME}/{JURRE_DIR}/ensemble-cgan && \
+    git clone ${GAN_REPO} -b ${MVUA_BRANCH} ${WORK_HOME}/{MVUA_DIR}/ensemble-cgan && \
+    cd ${WORK_HOME}/{JURRE_DIR}/ensemble-cgan && pip install --upgrade pip && pip install --no-cache-dir -e .
 
 COPY --chown=${USER_NAME}:root ./pyproject.toml ./poetry.lock ./README.md ${WORK_HOME}/
 COPY --chown=${USER_NAME}:root ./fastcgan ${WORK_HOME}/fastcgan
 RUN pip install --no-cache-dir -e . && touch ${WORK_HOME}/.env
 
-CMD ["python", "fastcgan/jobs/manager.py"]
+CMD ["python"]

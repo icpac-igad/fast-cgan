@@ -113,7 +113,7 @@ def sync_sftp_data_files(
     to_sync = [
         f"IFS_{data_date}.nc"
         for data_date in sorted(data_dates, reverse=True)
-        if data_date not in ifs_dates
+        if data_date.replace("Z","") not in ifs_dates
     ]
     logger.debug(
         f"processing sftp data syncronization of {model} model source files {' -> '.join(to_sync)}"
