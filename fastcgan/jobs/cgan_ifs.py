@@ -201,15 +201,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
     dict_args = {key: value for key, value in args.__dict__.items() if key != "command"}
     set_data_sycn_status(source=args.model, sync_type="download", status=False)
+    set_data_sycn_status(source=args.model, sync_type="processing", status=False)
     if args.command == "download":
         syncronize_post_processed_ifs_data(model=args.model)
     elif args.command == "migrate":
         for source in ["cgan-ifs", "cgan-forecast"]:
             migrate_files(source)
     elif args.command == "process":
-        post_process_downloaded_cgan_ifs(
-            model="cgan-ifs-7d-ens" if args.model == "mvua-kubwa" else "cgan-ifs-6h-ens"
-        )
+        post_process_downloaded_cgan_ifs(model=args.model)
     else: # drop to scheduler by default
         # no need of executing sync task on count jobs
         if 'ens' in args.model:
