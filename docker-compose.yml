@@ -83,7 +83,7 @@ services:
       - ${LOGS_DIR:-./data/logs}:${APP_LOGS_DIR:-/opt/cgan/logs}
       - ${MODELS_CONFIG_DIR:-./data/model}/jurre-brishti:${WORK_HOME:-/opt/cgan}/${JURRE_DIR:-Jurre_Brishti}/model-config
       - ${CGAN_LOCAL_CONFIG:-./configs/local_config.yaml}:${WORK_HOME:-/opt/cgan}/${JURRE_DIR:-Jurre_Brishti}/ensemble-cgan/dsrnngan/local_config.yaml:ro
-      - ${JURRE_MAIN_CONFIG:-./configs/jurre-brishti/config.yaml}:${WORK_HOME:-/opt/cgan}/${JURRE_DIR:-Jurre_Brishti}/ensemble-cgan/dsrnngan/confg.yaml:ro
+      - ${JURRE_MAIN_CONFIG:-./configs/jurre-brishti/config.yaml}:${WORK_HOME:-/opt/cgan}/${JURRE_DIR:-Jurre_Brishti}/ensemble-cgan/dsrnngan/config.yaml:ro
       - ${JURRE_CGAN_DATA_PAPVT_NET_IPTHS_CONFIG:-./configs/jurre-brishti/data_paths.yaml}:${WORK_HOME:-/opt/cgan}/${JURRE_DIR:-Jurre_Brishti}/ensemble-cgan/dsrnngan/data_paths.yaml:ro
       - ${JURRE_CGAN_FORECAST_CONFIG:-./configs/jurre-brishti/forecast-ens.yaml}:${WORK_HOME:-/opt/cgan}/${JURRE_DIR:-Jurre_Brishti}/ensemble-cgan/dsrnngan/forecast.yaml:ro
       - ${IFS_SERVER_KEY:-./data/private/id_rsa.key}:${IFS_PRIVATE_KEY:-/srv/ssl/private.key}:ro
@@ -111,7 +111,7 @@ services:
       - ${LOGS_DIR:-./data/logs}:${APP_LOGS_DIR:-/opt/cgan/logs}
       - ${MODELS_CONFIG_DIR:-./data/model}/jurre-brishti:${WORK_HOME:-/opt/cgan}/${JURRE_DIR:-Jurre_Brishti}/model-config
       - ${CGAN_LOCAL_CONFIG:-./configs/local_config.yaml}:${WORK_HOME:-/opt/cgan}/${JURRE_DIR:-Jurre_Brishti}/ensemble-cgan/dsrnngan/local_config.yaml:ro
-      - ${JURRE_MAIN_CONFIG:-./configs/jurre-brishti/config.yaml}:${WORK_HOME:-/opt/cgan}/${JURRE_DIR:-Jurre_Brishti}/ensemble-cgan/dsrnngan/confg.yaml:ro
+      - ${JURRE_MAIN_CONFIG:-./configs/jurre-brishti/config.yaml}:${WORK_HOME:-/opt/cgan}/${JURRE_DIR:-Jurre_Brishti}/ensemble-cgan/dsrnngan/config.yaml:ro
       - ${JURRE_CGAN_DATA_PAPVT_NET_IPTHS_CONFIG:-./configs/jurre-brishti/data_paths.yaml}:${WORK_HOME:-/opt/cgan}/${JURRE_DIR:-Jurre_Brishti}/ensemble-cgan/dsrnngan/data_paths.yaml:ro
       - ${JURRE_CGAN_FORECAST_CONFIG:-./configs/jurre-brishti/forecast-count.yaml}:${WORK_HOME:-/opt/cgan}/${JURRE_DIR:-Jurre_Brishti}/ensemble-cgan/dsrnngan/forecast.yaml:ro
       - ${IFS_SERVER_KEY:-./data/private/id_rsa.key}:${IFS_PRIVATE_KEY:-/srv/ssl/private.key}:ro
@@ -139,7 +139,7 @@ services:
       - ${LOGS_DIR:-./data/logs}:${APP_LOGS_DIR:-/opt/cgan/logs}
       - ${MODELS_CONFIG_DIR:-./data/model}/mvua-kubwa:${WORK_HOME:-/opt/cgan}/model
       - ${CGAN_LOCAL_CONFIG:-./configs/local_config.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/local_config.yaml:ro
-      - ${MVUA_MAIN_CONFIG:-./configs/mvua-kubwa/config.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/confg.yaml:ro
+      - ${MVUA_MAIN_CONFIG:-./configs/mvua-kubwa/config.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/config.yaml:ro
       - ${MVUA_CGAN_DATA_PATHS_CONFIG:-./configs/mvua-kubwa/data_paths.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/data_paths.yaml:ro
       - ${MVUA_CGAN_FORECAST_CONFIG:-./configs/mvua-kubwa/forecast-ens.yaml}:${WORK_HOME:-/opt/cgan}/ensemble-cgan/dsrnngan/forecast.yaml:ro
       - ${IFS_SERVER_KEY:-./data/private/id_rsa.key}:${IFS_PRIVATE_KEY:-/srv/ssl/private.key}:ro
@@ -167,7 +167,7 @@ services:
       - ${LOGS_DIR:-./data/logs}:${APP_LOGS_DIR:-/opt/cgan/logs}
       - ${MODELS_CONFIG_DIR:-./data/model}/mvua-kubwa:${WORK_HOME:-/opt/cgan}/${MVUA_DIR:-Mvua_Kubwa}/model-config
       - ${CGAN_LOCAL_CONFIG:-./configs/local_config.yaml}:${WORK_HOME:-/opt/cgan}/${MVUA_DIR:-Mvua_Kubwa}/ensemble-cgan/dsrnngan/local_config.yaml:ro
-      - ${MVUA_MAIN_CONFIG:-./configs/mvua-kubwa/config.yaml}:${WORK_HOME:-/opt/cgan}/${MVUA_DIR:-Mvua_Kubwa}/ensemble-cgan/dsrnngan/confg.yaml:ro
+      - ${MVUA_MAIN_CONFIG:-./configs/mvua-kubwa/config.yaml}:${WORK_HOME:-/opt/cgan}/${MVUA_DIR:-Mvua_Kubwa}/ensemble-cgan/dsrnngan/config.yaml:ro
       - ${MVUA_CGAN_DATA_PATHS_CONFIG:-./configs/mvua-kubwa/data_paths.yaml}:${WORK_HOME:-/opt/cgan}/${MVUA_DIR:-Mvua_Kubwa}/ensemble-cgan/dsrnngan/data_paths.yaml:ro
       - ${MVUA_CGAN_FORECAST_CONFIG:-./configs/mvua-kubwa/forecast-count.yaml}:${WORK_HOME:-/opt/cgan}/${MVUA_DIR:-Mvua_Kubwa}/ensemble-cgan/dsrnngan/forecast.yaml:ro
       - ${IFS_SERVER_KEY:-./data/private/id_rsa.key}:${IFS_PRIVATE_KEY:-/srv/ssl/private.key}:ro
