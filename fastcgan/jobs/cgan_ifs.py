@@ -27,7 +27,7 @@ from fastcgan.jobs.utils import (
 def generate_cgan_forecasts(
     model: cgan_model_literal,
     mask_region: str | None = COUNTRY_NAMES[0],
-    min_gbmc_size: int | None = 260,
+    min_gbmc_size: int | None = 40,
 ):
     # start an infinite loop that will execute when other data-processing jobs are completed
     while True:
@@ -196,7 +196,7 @@ if __name__ == "__main__":
         dest="command",
         type=str,
         help="command to be executed. either download or process",
-        default="download",
+        default=None,
     )
     args = parser.parse_args()
     dict_args = {key: value for key, value in args.__dict__.items() if key != "command"}

@@ -356,7 +356,7 @@ if __name__ == "__main__":
         dest="command",
         type=str,
         help="command to be executed. either download or process",
-        default="download",
+        default=None,
     )
     parser.add_argument(
         "-d",
@@ -399,7 +399,7 @@ if __name__ == "__main__":
     data_model = "open-ifs"
     set_data_sycn_status(source=data_model, sync_type="download", status=False)
     set_data_sycn_status(source=data_model, sync_type="processing", status=False)
-    if args.command == "sync" or args.command == "download":
+    if args.command == "download":
         syncronize_open_ifs_forecast_data(**dict_args)
     elif args.command == "migrate":
         migrate_files(data_model)
