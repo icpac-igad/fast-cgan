@@ -39,12 +39,12 @@ services:
     depends_on:
       - redis
 
-  open-ifs:
+  open-ifs: &light_data_jobs
     image: ${API_IMAGE_NAME:-icpac/fast-cgan-api}
-    container_name: ${OPEN_IFS_JOBS_CNTR_NAME:-open-ifs-jobs}
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: ${OPEN_IFS_JOBS_CNTR_NAME:-open-ifs-jobs}
     restart: ${RESTART_POLICY:-always}
     command: ${OPEN_IFS_JOBS_CMD:-python fastcgan/jobs/open_ifs.py}
     environment:
@@ -56,6 +56,18 @@ services:
       - ${FORECASTS_DATA_DIR:-./data/forecasts}:${APP_FORECASTS_DATA_DIR:-/opt/cgan/forecasts}
       - ${JOBS_DATA_DIR:-./data/jobs}:${APP_JOBS_DATA_DIR:-/opt/cgan/jobs}
       - ${LOGS_DIR:-./data/logs}:${APP_LOGS_DIR:-/opt/cgan/logs}
+  
+  files-cleaner:
+    <<: *light_data_jobs
+    image: ${API_IMAGE_NAME:-icpac/fast-cgan-api}
+    container_name: ${FILES_CLEANER_JOBS_CNTR_NAME:-old-files-cleaner}
+    command: ${FILES_CLEANER_JOBS_CMD:-python fastcgan/jobs/files_cleaner.py}
+    environment:
+      - WORK_HOME=${WORK_HOME:-/opt/cgan}
+      - FORECASTS_DATA_DIR=${APP_FORECASTS_DATA_DIR:-/opt/cgan/forecasts}
+      - MAX_FILE_AGE_DAYS=${MAX_FILE_AGE_DAYS:-1820}
+    volumes:
+      - ${FORECASTS_DATA_DIR:-./data/forecasts}:${APP_FORECASTS_DATA_DIR:-/opt/cgan/forecasts}
 
   jurre-brishti-ens: &cgan-forecast-model
     image: ${CGAN_IMAGE_NAME:-icpac/cgan-forecast-model}
@@ -92,9 +104,6 @@ services:
     <<: *cgan-forecast-model
     image: ${CGAN_IMAGE_NAME:-icpac/cgan-forecast-model}
     container_name: ${JURRE_COUNTS_JOBS_CNTR_NAME:-jurre-brishti-counts-jobs}
-    build:
-      context: .
-      dockerfile: ${JOBS_DOCKERFILE:-jobs.Dockerfile}
     restart: ${RESTART_POLICY:-always}
     command: ${JURRE_COUNTS_JOBS_CMD:-python fastcgan/jobs/cgan_ifs.py -m 'jurre-brishti-count'}
     environment:
@@ -120,9 +129,6 @@ services:
     <<: *cgan-forecast-model
     image: ${CGAN_IMAGE_NAME:-icpac/cgan-forecast-model}
     container_name: ${MVUA_ENS_JOBS_CNTR_NAME:-mvua-kubwa-ens-jobs}
-    build:
-      context: .
-      dockerfile: ${MVUA_ENS_JOBS_DOCKERFILE:-jobs.Dockerfile}
     restart: ${RESTART_POLICY:-always}
     command: ${MVUA_ENS_JOBS_CMD:-python fastcgan/jobs/cgan_ifs.py -m 'mvua-kubwa-ens'}
     environment:
@@ -148,9 +154,6 @@ services:
     <<: *cgan-forecast-model
     image: ${CGAN_IMAGE_NAME:-icpac/cgan-forecast-model}
     container_name: ${MVUA_COUNTS_JOBS_CNTR_NAME:-mvua-kubwa-counts-jobs}
-    build:
-      context: .
-      dockerfile: ${MVUA_ENS_JOBS_DOCKERFILE:-jobs.Dockerfile}
     restart: ${RESTART_POLICY:-always}
     command: ${MVUA_COUNTS_JOBS_CMD:-python fastcgan/jobs/cgan_ifs.py -m 'mvua-kubwa-ens'}
     environment:

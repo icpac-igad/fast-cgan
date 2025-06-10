@@ -84,7 +84,7 @@ def get_forecast_data_files(
 ) -> list[str]:
     store_path = get_data_store_path(source=source, mask_region=mask_region)
     data_files = get_directory_files(data_path=store_path, files=set())
-    return [str(dfile).split("/")[-1] for dfile in data_files]
+    return [dfile.name for dfile in data_files]
 
 
 def get_ecmwf_files_for_date(data_date: datetime, mask_region: str | None = COUNTRY_NAMES[0]) -> list[str]:
