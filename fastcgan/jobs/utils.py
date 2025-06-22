@@ -1,24 +1,22 @@
 import json
 import os
+import re
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Literal
 
+import pandas as pd
 import xarray as xr
 from loguru import logger
-from show_forecasts.constants import (
-    COUNTRY_NAMES,
-    DATA_PARAMS,
-    LEAD_END_HOUR,
-    LEAD_START_HOUR,
-)
+from show_forecasts.constants import COUNTRY_NAMES
 from show_forecasts.data_utils import get_region_extent
 
 from fastcgan.jobs.stubs import cgan_ifs_literal, cgan_model_literal, open_ifs_literal
+from fastcgan.models.settings import GanOutputDate
 from fastcgan.tools.config import settings
 
 
-def get_possible_forecast_dates(data_date: str | None = None, dateback: int | None = 4) -> list[datetime.date]:
+def get_possible_forecast_dates(data_date: str | None = None, dateback: int = 4) -> list[date]:
     if data_date is not None:
         return [datetime.strptime(data_date, "%Y-%m-%d").date()]
     now = datetime.now()
@@ -29,20 +27,20 @@ def get_possible_forecast_dates(data_date: str | None = None, dateback: int | No
     return dates
 
 
-def get_relevant_forecast_steps(start: int | None = 30, final: int | None = 54, step: int | None = 3) -> list[int]:
+def get_relevant_forecast_steps(start: int = 30, final: int = 54, step: int = 3) -> list[int]:
     return list(range(start, final + 1, step))
 
 
 def get_data_store_path(
     source: str,
     mask_region: str | None = None,
-    ens_ifs_models: list[str] | None = ["cgan-ifs-6h-ens", "cgan-ifs-7d-ens"],
-) -> Path | None:
+    ens_ifs_models: list[str] = ["cgan-ifs-6h-ens", "cgan-ifs-7d-ens"],
+) -> Path:
     if source == "jobs":
         data_dir_path = Path(settings.ASSETS_DIR_MAP["jobs"])
     else:
         base_dir = Path(settings.ASSETS_DIR_MAP["forecasts"]) / source
-        data_dir_path = base_dir if mask_region is None or source in ens_ifs_models else Path(f'{base_dir}/{mask_region}')
+        data_dir_path = base_dir if mask_region is None or source in ens_ifs_models else Path(f"{base_dir}/{mask_region}")
 
     # return None if directory doesn't exist
     if not data_dir_path.exists():
@@ -69,7 +67,7 @@ def get_dataset_file_path(
 
 
 # recursive function that calls itself until all directories in data_path are traversed
-def get_directory_files(data_path: Path, files: set[Path] | None = set(), file_extension: str | None = "nc") -> set[Path]:
+def get_directory_files(data_path: Path, files: set[Path] = set(), file_extension: str = "nc") -> set[Path]:
     for item in data_path.iterdir():
         if item.is_file() and item.name.endswith(file_extension):
             files.add(item)
@@ -83,11 +81,13 @@ def get_forecast_data_files(
     mask_region: str | None = None,
 ) -> list[str]:
     store_path = get_data_store_path(source=source, mask_region=mask_region)
-    data_files = get_directory_files(data_path=store_path, files=set())
-    return [dfile.name for dfile in data_files]
+    if store_path is not None:
+        data_files = get_directory_files(data_path=store_path, files=set())
+        return [dfile.name for dfile in data_files]
+    return []
 
 
-def get_ecmwf_files_for_date(data_date: datetime, mask_region: str | None = COUNTRY_NAMES[0]) -> list[str]:
+def get_ecmwf_files_for_date(data_date: datetime, mask_region: str = COUNTRY_NAMES[0]) -> list[str]:
     steps = get_relevant_forecast_steps()
     return [f"{mask_region.lower().replace(' ', '_')}-open_ifs-{data_date.strftime('%Y%m%d')}000000-{step}h-enfo-ef.nc" for step in steps]
 
@@ -115,8 +115,45 @@ def get_forecast_data_dates(
     return [data_date.strftime("%b %d, %Y") for data_date in reversed(tmp_dates)]
 
 
+def get_cgan_forecast_dates(
+    source: cgan_model_literal,
+    mask_region: str | None = None,
+) -> list[GanOutputDate]:
+    data_files = get_forecast_data_files(source=source, mask_region=mask_region)
+    if "-count" in source:
+        ptn = re.compile(r"^counts_([0-9]{8})_([0-9]{2})_([0-9]{1,3})h.nc$")
+        fmeta = [ptn.split(dfile)[1:-1] for dfile in data_files]
+        df = (
+            pd.DataFrame(data=fmeta, columns=["init_date", "init_time", "valid_time"])
+            .assign(
+                valid_time=lambda x: x["valid_time"].apply(lambda value: int(value)),
+                init_date=lambda x: x["init_date"].apply(lambda value: datetime.strptime(value, "%Y%m%d")),
+            )
+            .sort_values(by=["init_date", "valid_time"], ascending=False)
+            .assign(init_date=lambda x: x["init_date"].apply(lambda value: value.strftime("%Y-%b-%d")))
+        )
+        return json.loads(df.to_json(orient="records"))
+    elif "-ens" in source:
+        mask_region = COUNTRY_NAMES[0] if mask_region is None else mask_region
+        ptn = re.compile(f"^{mask_region.lower().replace(' ','_')}-{source.replace('-','_')}" + "-([0-9]{8})_([0-9]{2})Z.nc")
+        fmeta = [ptn.split(dfile)[1:-1] for dfile in data_files]
+        df = (
+            pd.DataFrame(data=fmeta, columns=["init_date", "init_time"])
+            .assign(
+                init_time=lambda x: x["init_time"].apply(lambda value: int(value)),
+                init_date=lambda x: x["init_date"].apply(lambda value: datetime.strptime(value, "%Y%m%d")),
+            )
+            .sort_values(by=["init_date", "init_time"], ascending=False)
+            .assign(init_date=lambda x: x["init_date"].apply(lambda value: value.strftime("%Y-%b-%d")))
+        )
+        return json.loads(df.to_json(orient="records"))
+    else:
+        return []
+
+
 def get_forecast_initialization_times(
-    data_date: str | None = None, model: Literal["jurre-brishti-ens", "jurre-brishti-count"] | None = "jurre-brishti-ens"
+    data_date: str | None = None,
+    model: Literal["jurre-brishti-ens", "jurre-brishti-count"] = "jurre-brishti-ens",
 ) -> list[str]:
     if data_date is None:
         fcst_dates = get_forecast_data_dates(source=model)
@@ -126,14 +163,14 @@ def get_forecast_initialization_times(
     fcst_date = datetime.strptime(data_date, "%b %d, %Y").strftime("%Y%m%d")
     data_files = get_forecast_data_files(source=model)
     if "-count" in model:
-        return {data_file.split("_")[2] for data_file in data_files if fcst_date in data_file}
-    return {data_file.split("_")[-1].replace("Z.nc", "") for data_file in data_files if fcst_date in data_file}
+        return list({data_file.split("_")[2] for data_file in data_files if fcst_date in data_file})
+    return list({data_file.split("_")[-1].replace("Z.nc", "") for data_file in data_files if fcst_date in data_file})
 
 
 def get_gan_forecast_dates(
     source: str,
     mask_region: str | None = None,
-):
+) -> list[str]:
     store_path = get_data_store_path(source=source, mask_region=mask_region)
     if store_path is None:
         return []
@@ -143,7 +180,7 @@ def get_gan_forecast_dates(
         for data_file in data_files:
             file_parts = data_file.name.split("_")
             data_dates.add(f"{file_parts[1]}_{file_parts[2]}")
-        return data_dates
+        return list(data_dates)
     return list({dfile.name.replace("Z.nc", "").split("-")[2] for dfile in data_files})
 
 
@@ -188,12 +225,12 @@ def save_to_new_filesystem_structure(
     file_path: Path,
     source: cgan_model_literal | cgan_ifs_literal,
     mask_region: str | None = COUNTRY_NAMES[0],
-    min_gbmc_size: int | None = 42 * 1024,
+    min_gbmc_size: int = 42 * 1024,
     part_to_replace: str | None = None,
-    ens_ifs_models: list[str] | None = ["cgan-ifs-6h-ens", "cgan-ifs-7d-ens"],
+    ens_ifs_models: list[str] = ["cgan-ifs-6h-ens", "cgan-ifs-7d-ens"],
 ) -> None:
     logger.debug(f"received filesystem migration task for - {source} - {file_path}")
-    if source in ens_ifs_models and file_path.stat().st_size / 1024 < min_gbmc_size:
+    if source in ens_ifs_models and file_path.stat().st_size / 1024 < float(min_gbmc_size):
         logger.debug(f"{file_path.name} migration task skipped due to invalid size of {file_path.stat().st_size / 1024}Kb")
         file_path.unlink()
     else:
@@ -205,7 +242,7 @@ def save_to_new_filesystem_structure(
             logger.error(f"failed to read {source} data file {file_path} with error {err}")
             file_path.unlink(missing_ok=True)
         else:
-            fname = file_path.name.replace(part_to_replace, "")
+            fname = file_path.name if part_to_replace is None else file_path.name.replace(part_to_replace, "")
             data_date = datetime.strptime(fname.replace("Z.nc", ""), "%Y%m%d_%H")
             target_file = get_dataset_file_path(
                 source=source,
@@ -224,7 +261,10 @@ def save_to_new_filesystem_structure(
                 if source not in ens_ifs_models:  # split cGAN forecasts by country
                     for country_name in COUNTRY_NAMES[1:]:
                         # create country slices
-                        sliced = slice_dataset_by_bbox(ds=ds, bbox=get_region_extent(shape_name=country_name))
+                        sliced = slice_dataset_by_bbox(
+                            ds=ds,
+                            bbox=get_region_extent(shape_name=country_name),  # type: ignore
+                        )
                         if sliced is None:
                             errors.append(f"error slicing {file_path.name} for bbox {country_name}")
                         else:
@@ -248,8 +288,10 @@ def save_to_new_filesystem_structure(
 
 
 # migrate dataset files from initial filesystem structure to revised.
-def migrate_files(source: str):
+def migrate_files(source: cgan_model_literal | cgan_ifs_literal):
     store = Path(os.getenv("DATA_STORE_DIR", str(Path("./store")))).absolute()
+    data_dir = None
+    part_to_replace = ""
     match source:
         case "cgan-ifs":
             data_dir = store / "IFS"
@@ -260,11 +302,12 @@ def migrate_files(source: str):
         case "open-ifs":
             data_dir = store / "interim" / "EA" / "open-ifs" / "enfo"
             part_to_replace = ""
-    data_files = [fpath for fpath in data_dir.iterdir() if fpath.name.endswith(".nc")]
-    logger.info(f"processing file-structure migration for {len(data_files)} {source} data files")
-    # copy data_files to new files path
-    for dfile in data_files:
-        save_to_new_filesystem_structure(file_path=dfile, source=source, part_to_replace=part_to_replace)
+    if data_dir is not None:
+        data_files = [fpath for fpath in data_dir.iterdir() if fpath.name.endswith(".nc")]
+        logger.info(f"processing file-structure migration for {len(data_files)} {source} data files")
+        # copy data_files to new files path
+        for dfile in data_files:
+            save_to_new_filesystem_structure(file_path=dfile, source=source, part_to_replace=part_to_replace)
 
 
 def set_data_sycn_status(
@@ -321,40 +364,3 @@ def get_processing_task_status(sync_type: str | None = "processing") -> bool:
         if sync_type not in data.keys():
             return False
         return not all(value is False for value in data[sync_type].values())
-
-
-# Some info to be clear with dates and times
-# Arguments
-#    forecast_init_date - A datetime.datetime corresponding to when the forecast was initialised.
-def print_forecast_info(forecast_init_date):
-    start_date = forecast_init_date + timedelta(hours=LEAD_START_HOUR)
-    end_date = forecast_init_date + timedelta(hours=LEAD_END_HOUR)
-    print(f"Forecast average: {start_date} - {end_date}")
-    print(f"Forecast initialisation: {forecast_init_date.date()} 00:00:00")
-    print()
-
-
-# Lists the variables available for plotting
-# Arguments
-#    print_variables=True - print a list of the variables (True or False)
-# Returns
-#    A list of the variable names that can be used for plotting.
-def get_possible_variables(print_variables=True):
-    keys = list(DATA_PARAMS.keys())
-    if print_variables:
-        print("Available variables to plot are the following:")
-        for i in range(len(keys)):
-            print(f"{keys[i]:<5} - {DATA_PARAMS[keys[i]]['name']} ({DATA_PARAMS[keys[i]]['units']})")
-        print()
-
-    return list(DATA_PARAMS.keys())
-
-
-def get_exceedence_normalization(threshold: dict[str, str], acc_time: str) -> int | float:
-    if threshold["acc_time"] == acc_time:
-        return threshold["value"]
-
-    from_acc_time = int(threshold["acc_time"].replace("h", ""))
-    to_acc_time = int(acc_time.replace("h", ""))
-    # return normalized value: (the value / from_acc) * to_acc
-    return round((threshold["value"] / from_acc_time) * to_acc_time, 2)

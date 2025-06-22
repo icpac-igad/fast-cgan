@@ -82,7 +82,7 @@ class EnvironmentOption(Enum):
 
 
 class EnvironmentSettings(BaseSettings):
-    ENVIRONMENT: EnvironmentOption = config("ENVIRONMENT", default="production")
+    ENVIRONMENT: EnvironmentOption = config("ENVIRONMENT", default=EnvironmentOption.PRODUCTION)
 
 
 class Settings(
@@ -110,6 +110,7 @@ def get_asset_dir_path(asset: Literal["cache"]) -> Path:
 
 
 def get_cached_file_base_path(file_type: Literal["media", "data"] | None = "media", source: str | None = None) -> Path:
+    file_type = file_type if file_type is not None else "media"
     cache_path = get_asset_dir_path("cache") / file_type
     if source is not None:
         cache_path = cache_path / source
@@ -124,4 +125,4 @@ def get_cached_file_url(file_path: str | Path) -> str:
 
 
 def get_allowed_cor_origins() -> list[str]:
-    return settings.ALLOWED_ORIGINS.split(",")
+    return [] if settings.ALLOWED_ORIGINS is None else settings.ALLOWED_ORIGINS.split(",")

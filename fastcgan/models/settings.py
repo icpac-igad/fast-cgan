@@ -5,6 +5,12 @@ class ForecastDate(BaseModel):
     date: str
 
 
+class GanOutputDate(BaseModel):
+    init_date: str
+    init_time: int | None = None
+    valid_time: int | None = None
+
+
 class ForecastInitTime(BaseModel):
     hour: str
 
